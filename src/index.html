@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StarWolf Player</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-container" id="app-container">
+      
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h2>Biblioteca</h2>
+          <div class="sidebar-toolbar">
+            <button id="btn-scan" class="tool-btn" title="Abrir carpeta nueva">📁</button>
+            <button id="btn-refresh" class="tool-btn hidden" title="Actualizar cambios">🔄</button>
+          </div>
+        </div>
+        <div id="folder-list" class="folder-grid"></div>
+      </aside>
+
+      <main class="player-main" id="main-center">
+        
+        <button id="btn-toggle-sidebar" class="ghost-btn left-top-btn" title="Alternar Biblioteca">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+
+        <button id="btn-toggle-queue" class="ghost-btn right-top-btn" title="Alternar Cola">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+          </svg>
+        </button>
+
+        <div id="now-playing-view" class="center-view">
+          <div class="view-header">
+            <button id="btn-back-to-folders" class="back-btn hidden">Volver a carpeta</button>
+          </div>
+          
+          <div class="now-playing-layout" id="now-playing-layout">
+            <div class="main-art-container">
+              <div class="album-art">
+                <div class="placeholder-art">🎶</div>
+              </div>
+              <div class="track-info home-centered-info">
+                <h1 id="track-title">Sin reproducir</h1>
+                <h2 id="track-artist">Artista: --</h2>
+                <h3 id="track-album">Álbum: --</h3>
+              </div>
+            </div>
+
+            <aside class="up-next-panel">
+              <h3>Siguientes en cola</h3>
+              <ul id="up-next-list">
+                <li class="empty-msg">Selecciona una carpeta para ver la cola</li>
+              </ul>
+            </aside>
+          </div>
+        </div>
+
+        <div id="folder-tracks-view" class="center-view hidden">
+          <div class="view-header">
+            <button id="btn-back-to-player" class="back-btn">Ver Reproductor</button>
+            <h2 id="selected-folder-title">Carpeta Seleccionada</h2>
+          </div>
+          
+          <div class="split-tracks-container">
+            <div class="tracks-scroll-container">
+              <ul id="center-track-list"></ul>
+            </div>
+            
+            <aside class="right-metadata-panel">
+              <div class="side-album-art">🎨</div>
+              <div class="side-track-details">
+                <h3 id="side-title">Ninguna pista</h3>
+                <p id="side-artist">Artista: --</p>
+                <p id="side-album">Álbum: --</p>
+              </div>
+            </aside>
+          </div>
+        </div>
+
+      </main>
+
+      <footer class="controls">
+        <div class="playback-controls">
+          <button id="btn-prev">⏮</button>
+          <button id="btn-play">▶</button>
+          <button id="btn-next">⏭</button>
+        </div>
+        <div class="progress-bar"><div class="progress"></div></div>
+      </footer>
+
+    </div>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

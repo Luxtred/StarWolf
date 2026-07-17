@@ -1,0 +1,170 @@
+:root {
+  --bg-color: #121212;
+  --panel-bg: #1e1e1e;
+  --accent: #bb86fc; 
+  --text: #ffffff;
+  --text-secondary: #aaaaaa;
+}
+
+body, html {
+  margin: 0; padding: 0; 
+  height: 100vh; width: 100vw;
+  font-family: system-ui, sans-serif;
+  background-color: var(--bg-color); color: var(--text);
+  overflow: hidden;
+}
+
+/* CUADRÍCULA MAESTRA Y ANIMACIÓN DE OCULTAMIENTO */
+.app-container {
+  display: grid; 
+  grid-template-columns: 280px 1fr; 
+  grid-template-rows: calc(100vh - 90px) 90px; 
+  height: 100vh; width: 100vw;
+  transition: grid-template-columns 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.app-container.hide-sidebar { grid-template-columns: 0px 1fr; }
+
+/* BARRA LATERAL Y TOOLBAR */
+.sidebar {
+  background-color: var(--panel-bg); padding: 20px; grid-row: 1 / 2; grid-column: 1 / 2;
+  border-right: 1px solid #252525; display: flex; flex-direction: column; gap: 15px; 
+  overflow: hidden; white-space: nowrap; transition: padding 0.4s ease, opacity 0.3s ease;
+}
+.app-container.hide-sidebar .sidebar { padding: 20px 0; opacity: 0; border-right: none; }
+
+.sidebar-header { display: flex; justify-content: space-between; align-items: center; }
+.sidebar-header h2 { margin: 0; font-size: 20px; font-weight: 700; }
+.sidebar-toolbar { display: flex; gap: 8px; }
+.tool-btn { background: #252525; border: 1px solid #333; border-radius: 6px; color: #fff; padding: 6px 10px; cursor: pointer; transition: 0.2s; font-size: 14px; }
+.tool-btn:hover { background: var(--accent); color: #000; border-color: var(--accent); }
+
+.folder-grid { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex-grow: 1; padding-right: 5px;}
+.folder-card { flex-shrink: 0; display: flex; align-items: center; gap: 12px; background: #252525; padding: 10px; border-radius: 12px; cursor: pointer; border: 1px solid transparent; }
+.folder-card:hover { background: #2d2d2d; border-color: var(--accent); }
+.folder-cover-placeholder { width: 48px; height: 48px; background: linear-gradient(135deg, #444, #1e1e1e); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.folder-card-info { display: flex; flex-direction: column; overflow: hidden; }
+.folder-card-name { font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.folder-card-count { font-size: 12px; color: var(--text-secondary); }
+
+/* LIENZO CENTRAL (AHORA RELATIVO PARA BOTONES FLOTANTES) */
+.player-main {
+  grid-row: 1 / 2; grid-column: 2 / 3; 
+  background: radial-gradient(circle at center, #252525 0%, #121212 100%);
+  padding: 30px; display: flex; flex-direction: column; overflow: hidden; min-height: 0; min-width: 0;
+  position: relative; /* Clave para los botones fantasma */
+}
+
+/* BOTONES FANTASMA MINIMALISTAS (SVG) */
+.ghost-btn {
+  position: absolute;
+  top: 25px;
+  background: transparent;
+  border: none;
+  color: #777;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 100;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ghost-btn:hover {
+  color: var(--text);
+  transform: scale(1.1);
+  filter: drop-shadow(0px 0px 5px rgba(255,255,255,0.3));
+}
+.left-top-btn { left: 25px; }
+.right-top-btn { right: 25px; }
+
+.center-view { width: 100%; height: 100%; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.hidden { display: none !important; }
+
+/* ENCABEZADOS Y BOTONES DE REGRESO MINIMALISTAS */
+.view-header { 
+  display: flex; align-items: center; justify-content: center; gap: 20px; 
+  margin-bottom: 20px; flex-shrink: 0; height: 35px; width: 100%;
+}
+.view-header h2 { margin: 0; font-size: 20px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+
+.back-btn { 
+  font-size: 11px; background: rgba(186, 134, 252, 0.1); padding: 6px 14px; 
+  border-radius: 20px; border: none; color: var(--accent); cursor: pointer; 
+  white-space: nowrap; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; transition: all 0.2s ease; 
+}
+.back-btn:hover { background: var(--accent); color: #000; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(186, 134, 252, 0.3); }
+
+/* VISTA REPRODUCTOR Y ANIMACIÓN DE COLA */
+.now-playing-layout {
+  display: grid; grid-template-columns: 1fr 320px; gap: 25px; flex-grow: 1; min-height: 0; overflow: hidden;
+  transition: grid-template-columns 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.now-playing-layout.hide-queue { grid-template-columns: 1fr 0px; gap: 0; }
+
+.main-art-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-width: 0; }
+.album-art { width: 100%; max-width: 320px; aspect-ratio: 1; background: #1e1e1e; border-radius: 28px; display: flex; align-items: center; justify-content: center; font-size: 100px; box-shadow: 0 20px 60px rgba(0,0,0,0.7); flex-shrink: 0; }
+.home-centered-info { text-align: center; margin-top: 35px; width: 100%; padding: 0 20px; box-sizing: border-box; }
+.home-centered-info h1 { margin: 0 0 10px 0; font-size: 30px; font-weight: 900; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.home-centered-info h2 { margin: 0 0 6px 0; font-size: 18px; font-weight: 500; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+.home-centered-info h3 { margin: 0; font-size: 15px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+
+/* PANEL DE COLA DERECHO */
+.up-next-panel {
+  background: rgba(0,0,0,0.2); border-radius: 16px; padding: 15px; border: 1px solid #252525;
+  display: flex; flex-direction: column; overflow: hidden; min-width: 0; 
+  transition: padding 0.4s ease, opacity 0.3s ease; white-space: nowrap;
+}
+.now-playing-layout.hide-queue .up-next-panel { padding: 15px 0; opacity: 0; border: none; }
+
+.up-next-panel h3 { margin: 0 0 15px 0; font-size: 15px; color: var(--text-secondary); border-bottom: 1px solid #333; padding-bottom: 10px; flex-shrink: 0;}
+#up-next-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 5px; padding-right: 5px;}
+.empty-msg { font-size: 13px; color: #666; text-align: center; margin-top: 20px;}
+
+.up-next-item, .center-track-item { 
+  flex-shrink: 0; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; cursor: pointer; 
+  transition: 0.2s; border: 1px solid transparent; overflow: hidden; min-width: 0; 
+}
+.up-next-item { display: flex; flex-direction: column; }
+.up-next-item:hover, .center-track-item:hover { background: rgba(186, 134, 252, 0.1); border-color: rgba(186, 134, 252, 0.3);}
+
+/* ESTILO DE CANCIÓN ACTUAL (NEÓN) */
+.playing-now {
+  background: rgba(186, 134, 252, 0.15) !important;
+  border-left: 4px solid var(--accent) !important;
+  border-radius: 4px 8px 8px 4px;
+}
+.playing-now .track-name, .playing-now .up-next-title { color: var(--accent) !important; }
+
+.up-next-title { font-size: 13px; font-weight: bold; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%;}
+.up-next-artist { font-size: 11px; color: var(--text-secondary); margin-top: 4px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+
+/* VISTA DIVIDIDA (CARPETA) */
+.split-tracks-container { display: grid; grid-template-columns: 1fr 320px; gap: 25px; flex-grow: 1; min-height: 0; overflow: hidden; }
+.tracks-scroll-container { overflow-y: auto; padding-right: 10px; min-width: 0; }
+#center-track-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.center-track-item { display: flex; align-items: center; padding: 12px 16px; width: 100%; box-sizing: border-box; }
+.center-track-item.dragging { opacity: 0.4; background: #333; border: 1px dashed var(--accent); cursor: grabbing; }
+
+.track-index { color: var(--accent); font-weight: bold; width: 30px; font-size: 14px; flex-shrink: 0; }
+.track-name { font-weight: bold; font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff;}
+.track-badge { background: #2d2d2d; color: #bb86fc; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 10px; font-weight: 800; flex-shrink: 0; }
+.track-duration { color: var(--text-secondary); font-size: 13px; margin-left: 15px; min-width: 35px; text-align: right; flex-shrink: 0; }
+
+.right-metadata-panel { width: 100%; background-color: rgba(255, 255, 255, 0.03); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; align-items: center; border: 1px solid #252525; overflow-y: auto; box-sizing: border-box; min-width: 0;}
+.side-album-art { width: 100%; aspect-ratio: 1; background: linear-gradient(45deg, #1e1e1e, #2d2d2d); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 80px; margin-bottom: 20px; flex-shrink: 0; }
+.side-track-details { width: 100%; text-align: left; min-width: 0;}
+.side-track-details h3 { margin: 0 0 10px 0; font-size: 18px; font-weight: 900; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff;}
+.side-track-details p { margin: 4px 0; font-size: 14px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+
+/* CONTROLES INFERIORES LIMPIOS */
+.controls { grid-row: 2 / 3; grid-column: 1 / -1; background-color: var(--panel-bg); display: flex; justify-content: center; align-items: center; padding: 0 30px; border-top: 1px solid #252525; height: 100%; box-sizing: border-box; }
+.playback-controls { display: flex; gap: 25px; align-items: center; flex-shrink: 0;}
+.controls button { background: none; border: none; color: var(--text); font-size: 28px; cursor: pointer; }
+.controls button:hover { color: var(--accent); }
+.progress-bar { flex-grow: 1; max-width: 800px; height: 6px; background-color: #333; border-radius: 3px; margin-left: 40px;}
+.progress { width: 45%; height: 100%; background-color: var(--accent); border-radius: 3px;}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
