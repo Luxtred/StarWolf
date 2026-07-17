@@ -11,39 +11,34 @@
       
       <aside class="sidebar">
         <div class="sidebar-header">
-          <h2>Biblioteca</h2>
+          <button id="btn-toggle-sidebar" class="ghost-btn rail-btn" title="Alternar Biblioteca">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          <h2 class="panel-label">Biblioteca</h2>
           <div class="sidebar-toolbar">
-            <button id="btn-scan" class="tool-btn" title="Abrir carpeta nueva">📁</button>
-            <button id="btn-refresh" class="tool-btn hidden" title="Actualizar cambios">🔄</button>
+            <button id="btn-scan" class="tool-btn" title="Abrir carpeta nueva">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+            </button>
+            <button id="btn-refresh" class="tool-btn hidden" title="Actualizar cambios">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            </button>
           </div>
         </div>
         <div id="folder-list" class="folder-grid"></div>
       </aside>
 
       <main class="player-main" id="main-center">
-        
-        <button id="btn-toggle-sidebar" class="ghost-btn left-top-btn" title="Alternar Biblioteca">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
-        </button>
-
-        <button id="btn-toggle-queue" class="ghost-btn right-top-btn" title="Alternar Cola">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <line x1="8" y1="6" x2="21" y2="6"></line>
-            <line x1="8" y1="12" x2="21" y2="12"></line>
-            <line x1="8" y1="18" x2="21" y2="18"></line>
-            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-            <line x1="3" y1="18" x2="3.01" y2="18"></line>
-          </svg>
-        </button>
 
         <div id="now-playing-view" class="center-view">
           <div class="view-header">
-            <button id="btn-back-to-folders" class="back-btn hidden">Volver a carpeta</button>
+            <button id="btn-back-to-folders" class="back-btn hidden">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              Volver a carpeta
+            </button>
           </div>
           
           <div class="now-playing-layout" id="now-playing-layout">
@@ -59,7 +54,9 @@
             </div>
 
             <aside class="up-next-panel">
-              <h3>Siguientes en cola</h3>
+              <div class="panel-header-row">
+                <h3 class="panel-label">Siguientes en cola</h3>
+              </div>
               <ul id="up-next-list">
                 <li class="empty-msg">Selecciona una carpeta para ver la cola</li>
               </ul>
@@ -69,7 +66,10 @@
 
         <div id="folder-tracks-view" class="center-view hidden">
           <div class="view-header">
-            <button id="btn-back-to-player" class="back-btn">Ver Reproductor</button>
+            <button id="btn-back-to-player" class="back-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              Ver Reproductor
+            </button>
             <h2 id="selected-folder-title">Carpeta Seleccionada</h2>
           </div>
           
@@ -92,13 +92,50 @@
       </main>
 
       <footer class="controls">
-        <div class="playback-controls">
-          <button id="btn-prev">⏮</button>
-          <button id="btn-play">▶</button>
-          <button id="btn-next">⏭</button>
+        <button id="btn-view-queue" class="ghost-btn footer-side-btn" title="Ver cola de reproducción">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="15" y2="6"></line>
+            <line x1="3" y1="12" x2="15" y2="12"></line>
+            <line x1="3" y1="18" x2="11" y2="18"></line>
+            <path d="M18 9l3 3-3 3"></path>
+          </svg>
+        </button>
+
+        <div class="controls-center">
+          <div class="playback-controls">
+            <button id="btn-prev">⏮</button>
+            <button id="btn-play">▶</button>
+            <button id="btn-next">⏭</button>
+          </div>
+          <div class="progress-bar"><div class="progress"></div></div>
         </div>
-        <div class="progress-bar"><div class="progress"></div></div>
+
+        <button id="btn-settings" class="ghost-btn footer-side-btn" title="Ajustes">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
       </footer>
+
+      <div id="settings-modal" class="settings-modal hidden">
+        <div class="settings-panel">
+          <div class="settings-panel-header">
+            <h3>Ajustes</h3>
+            <button id="btn-close-settings" class="ghost-btn" title="Cerrar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+          </div>
+          <label class="settings-label">Color de acento</label>
+          <div class="accent-swatches">
+            <button class="swatch" data-color="#bb86fc" style="background:#bb86fc" title="Violeta"></button>
+            <button class="swatch" data-color="#4fd1c5" style="background:#4fd1c5" title="Turquesa"></button>
+            <button class="swatch" data-color="#f6ad55" style="background:#f6ad55" title="Naranja"></button>
+            <button class="swatch" data-color="#fc8ce8" style="background:#fc8ce8" title="Rosa"></button>
+            <button class="swatch" data-color="#63d471" style="background:#63d471" title="Verde"></button>
+          </div>
+        </div>
+      </div>
 
     </div>
     <script type="module" src="/main.js"></script>

@@ -23,20 +23,24 @@ body, html {
   transition: grid-template-columns 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.app-container.hide-sidebar { grid-template-columns: 0px 1fr; }
+.app-container.hide-sidebar { grid-template-columns: 64px 1fr; }
 
 /* BARRA LATERAL Y TOOLBAR */
 .sidebar {
   background-color: var(--panel-bg); padding: 20px; grid-row: 1 / 2; grid-column: 1 / 2;
   border-right: 1px solid #252525; display: flex; flex-direction: column; gap: 15px; 
-  overflow: hidden; white-space: nowrap; transition: padding 0.4s ease, opacity 0.3s ease;
+  overflow: hidden; white-space: nowrap; transition: padding 0.4s ease;
 }
-.app-container.hide-sidebar .sidebar { padding: 20px 0; opacity: 0; border-right: none; }
+.app-container.hide-sidebar .sidebar { padding: 20px 10px; }
+.app-container.hide-sidebar .sidebar-header { justify-content: center; }
+.app-container.hide-sidebar .sidebar-header .panel-label,
+.app-container.hide-sidebar .sidebar-toolbar,
+.app-container.hide-sidebar .folder-grid { display: none; }
 
-.sidebar-header { display: flex; justify-content: space-between; align-items: center; }
-.sidebar-header h2 { margin: 0; font-size: 20px; font-weight: 700; }
-.sidebar-toolbar { display: flex; gap: 8px; }
-.tool-btn { background: #252525; border: 1px solid #333; border-radius: 6px; color: #fff; padding: 6px 10px; cursor: pointer; transition: 0.2s; font-size: 14px; }
+.sidebar-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sidebar-header .panel-label { margin: 0; font-size: 20px; font-weight: 700; flex-grow: 1; }
+.sidebar-toolbar { display: flex; gap: 8px; flex-shrink: 0; }
+.tool-btn { background: #252525; border: 1px solid #333; border-radius: 6px; color: #999; padding: 7px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
 .tool-btn:hover { background: var(--accent); color: #000; border-color: var(--accent); }
 
 .folder-grid { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex-grow: 1; padding-right: 5px;}
@@ -57,47 +61,47 @@ body, html {
 
 /* BOTONES FANTASMA MINIMALISTAS (SVG) */
 .ghost-btn {
-  position: absolute;
-  top: 25px;
   background: transparent;
   border: none;
   color: #777;
   cursor: pointer;
   transition: all 0.2s ease;
-  z-index: 100;
   padding: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  border-radius: 6px;
 }
 .ghost-btn:hover {
   color: var(--text);
-  transform: scale(1.1);
-  filter: drop-shadow(0px 0px 5px rgba(255,255,255,0.3));
+  background: rgba(255,255,255,0.06);
 }
-.left-top-btn { left: 25px; }
-.right-top-btn { right: 25px; }
+
+/* Botones "riel" que viven dentro de los headers de los paneles colapsables */
+.rail-btn { flex-shrink: 0; }
 
 .center-view { width: 100%; height: 100%; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 .hidden { display: none !important; }
 
 /* ENCABEZADOS Y BOTONES DE REGRESO MINIMALISTAS */
 .view-header { 
-  display: flex; align-items: center; justify-content: center; gap: 20px; 
+  display: flex; align-items: center; justify-content: flex-start; gap: 16px; 
   margin-bottom: 20px; flex-shrink: 0; height: 35px; width: 100%;
 }
 .view-header h2 { margin: 0; font-size: 20px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
 
 .back-btn { 
-  font-size: 11px; background: rgba(186, 134, 252, 0.1); padding: 6px 14px; 
-  border-radius: 20px; border: none; color: var(--accent); cursor: pointer; 
-  white-space: nowrap; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; transition: all 0.2s ease; 
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; background: transparent; padding: 6px 10px; 
+  border-radius: 8px; border: none; color: var(--text-secondary); cursor: pointer; 
+  white-space: nowrap; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; transition: all 0.2s ease; 
 }
-.back-btn:hover { background: var(--accent); color: #000; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(186, 134, 252, 0.3); }
+.back-btn:hover { background: rgba(255,255,255,0.06); color: var(--accent); }
 
 /* VISTA REPRODUCTOR Y ANIMACIÓN DE COLA */
 .now-playing-layout {
-  display: grid; grid-template-columns: 1fr 320px; gap: 25px; flex-grow: 1; min-height: 0; overflow: hidden;
+  display: grid; grid-template-columns: 1fr 300px; gap: 15px; flex-grow: 1; min-height: 0; overflow: hidden;
   transition: grid-template-columns 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 .now-playing-layout.hide-queue { grid-template-columns: 1fr 0px; gap: 0; }
@@ -117,7 +121,8 @@ body, html {
 }
 .now-playing-layout.hide-queue .up-next-panel { padding: 15px 0; opacity: 0; border: none; }
 
-.up-next-panel h3 { margin: 0 0 15px 0; font-size: 15px; color: var(--text-secondary); border-bottom: 1px solid #333; padding-bottom: 10px; flex-shrink: 0;}
+.panel-header-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; flex-shrink: 0; }
+.up-next-panel h3.panel-label { margin: 0; font-size: 15px; color: var(--text-secondary); flex-grow: 1; }
 #up-next-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 5px; padding-right: 5px;}
 .empty-msg { font-size: 13px; color: #666; text-align: center; margin-top: 20px;}
 
@@ -158,12 +163,27 @@ body, html {
 .side-track-details p { margin: 4px 0; font-size: 14px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
 
 /* CONTROLES INFERIORES LIMPIOS */
-.controls { grid-row: 2 / 3; grid-column: 1 / -1; background-color: var(--panel-bg); display: flex; justify-content: center; align-items: center; padding: 0 30px; border-top: 1px solid #252525; height: 100%; box-sizing: border-box; }
+.controls { grid-row: 2 / 3; grid-column: 1 / -1; background-color: var(--panel-bg); display: flex; justify-content: space-between; align-items: center; padding: 0 25px; border-top: 1px solid #252525; height: 100%; box-sizing: border-box; gap: 20px; }
+.controls-center { display: flex; align-items: center; flex-grow: 1; min-width: 0; }
 .playback-controls { display: flex; gap: 25px; align-items: center; flex-shrink: 0;}
 .controls button { background: none; border: none; color: var(--text); font-size: 28px; cursor: pointer; }
 .controls button:hover { color: var(--accent); }
 .progress-bar { flex-grow: 1; max-width: 800px; height: 6px; background-color: #333; border-radius: 3px; margin-left: 40px;}
 .progress { width: 45%; height: 100%; background-color: var(--accent); border-radius: 3px;}
+
+/* Botones minimalistas a los costados del footer (cola / ajustes) */
+.footer-side-btn { width: 40px; height: 40px; flex-shrink: 0; }
+
+/* MODAL DE AJUSTES */
+.settings-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 300; }
+.settings-panel { background: var(--panel-bg); border: 1px solid #333; border-radius: 16px; padding: 24px; width: 280px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+.settings-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.settings-panel-header h3 { margin: 0; font-size: 17px; }
+.settings-label { display: block; font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.accent-swatches { display: flex; gap: 10px; }
+.swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: 0.2s; padding: 0; }
+.swatch:hover { transform: scale(1.15); }
+.swatch.active { border-color: #fff; }
 
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }

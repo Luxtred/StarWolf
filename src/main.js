@@ -15,7 +15,10 @@ let btnBackToFolders = document.getElementById("btn-back-to-folders");
 let appContainer = document.getElementById("app-container");
 let nowPlayingLayout = document.getElementById("now-playing-layout");
 let btnToggleSidebar = document.getElementById("btn-toggle-sidebar");
-let btnToggleQueue = document.getElementById("btn-toggle-queue");
+let btnViewQueue = document.getElementById("btn-view-queue");
+let btnSettings = document.getElementById("btn-settings");
+let btnCloseSettings = document.getElementById("btn-close-settings");
+let settingsModal = document.getElementById("settings-modal");
 
 // Textos del reproductor
 let trackTitle = document.getElementById("track-title");
@@ -48,8 +51,30 @@ function cleanTrackName(filename) {
 btnToggleSidebar.addEventListener("click", () => {
     appContainer.classList.toggle("hide-sidebar");
 });
-btnToggleQueue.addEventListener("click", () => {
-    nowPlayingLayout.classList.toggle("hide-queue");
+// Botón del footer: única fuente de verdad para mostrar/ocultar la cola
+btnViewQueue.addEventListener("click", () => {
+    const comingFromFolderView = !folderTracksView.classList.contains("hidden");
+    folderTracksView.classList.add("hidden");
+    nowPlayingView.classList.remove("hidden");
+    if (comingFromFolderView) {
+        nowPlayingLayout.classList.remove("hide-queue");
+    } else {
+        nowPlayingLayout.classList.toggle("hide-queue");
+    }
+});
+
+// AJUSTES
+btnSettings.addEventListener("click", () => settingsModal.classList.remove("hidden"));
+btnCloseSettings.addEventListener("click", () => settingsModal.classList.add("hidden"));
+settingsModal.addEventListener("click", (e) => {
+    if (e.target === settingsModal) settingsModal.classList.add("hidden");
+});
+document.querySelectorAll(".swatch").forEach((swatch) => {
+    swatch.addEventListener("click", () => {
+        document.documentElement.style.setProperty("--accent", swatch.dataset.color);
+        document.querySelectorAll(".swatch").forEach((s) => s.classList.remove("active"));
+        swatch.classList.add("active");
+    });
 });
 
 scanBtn.addEventListener("click", async () => {
