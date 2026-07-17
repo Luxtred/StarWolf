@@ -1,23 +1,35 @@
 use std::fs;
 use std::path::Path;
+use base64::{Engine as _, engine::general_purpose};
 
-// Etiquetas estrictas para evitar el "undefined" en JavaScript
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Clone)]
 struct FolderSection {
-    #[serde(rename = "name")]
     name: String,
-    #[serde(rename = "count")]
     count: usize,
-    #[serde(rename = "tracks")]
     tracks: Vec<String>,
+    cover_image: Option<String>, // Nuevo: Guarda la carátula en Base64
 }
 
 #[derive(serde::Serialize)]
 struct ScanResult {
-    #[serde(rename = "path")]
     path: String,
-    #[serde(rename = "sections")]
     sections: Vec<FolderSection>,
+}
+
+// Función que busca la imagen en la carpeta
+fn find_cover_in_folder(path: &Path) -> Option<String> {
+    let cover_names = ["cover.jpg", "cover.png", "folder.jpg", "folder.png"];
+    for name in cover_names {
+        let img_path = path.join(name);
+        if img_path.exists() {
+            if let Ok(bytes) = fs::read(&img_path) {
+                let encoded = general_purpose::STANDARD.encode(&bytes);
+                let mime = if name.ends_with("png") { "image/png" } else { "image/jpeg" };
+                return Some(format!("data:{};base64,{}", mime, encoded));
+            }
+        }
+    }
+    None
 }
 
 fn perform_scan(base_path: &Path) -> Vec<FolderSection> {
@@ -35,7 +47,7 @@ fn perform_scan(base_path: &Path) -> Vec<FolderSection> {
                         let sub_path = sub_entry.path();
                         if sub_path.is_file() {
                             if let Some(extension) = sub_path.extension() {
-                                if extension == "opus" {
+                                if extension == "opus" || extension == "mp3" || extension == "flac" {
                                     if let Some(name) = sub_path.file_name() {
                                         tracks.push(name.to_string_lossy().into_owned());
                                     }
@@ -46,40 +58,17 @@ fn perform_scan(base_path: &Path) -> Vec<FolderSection> {
                 }
 
                 if !tracks.is_empty() {
+                    let cover = find_cover_in_folder(&path);
                     sections.push(FolderSection {
                         name: folder_name,
                         count: tracks.len(),
                         tracks,
+                        cover_image: cover,
                     });
                 }
             }
         }
     }
-
-    let mut root_tracks = Vec::new();
-    if let Ok(entries) = fs::read_dir(base_path) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.is_file() {
-                if let Some(extension) = path.extension() {
-                    if extension == "opus" {
-                        if let Some(name) = path.file_name() {
-                            root_tracks.push(name.to_string_lossy().into_owned());
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    if !root_tracks.is_empty() {
-        sections.insert(0, FolderSection {
-            name: "Canciones sueltas".to_string(),
-            count: root_tracks.len(),
-            tracks: root_tracks,
-        });
-    }
-
     sections
 }
 

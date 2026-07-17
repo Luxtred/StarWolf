@@ -28,11 +28,46 @@ let sideTitle = document.getElementById("side-title");
 let sideArtist = document.getElementById("side-artist");
 let sideAlbum = document.getElementById("side-album");
 
+// Carátulas
+let coverArtImg = document.getElementById("cover-art-img");
+let coverArtPlaceholder = document.getElementById("cover-art-placeholder");
+
+// Motor de audio
+let audioPlayer = document.getElementById("audio-player");
+let btnPlay = document.getElementById("btn-play");
+let btnPrev = document.getElementById("btn-prev");
+let btnNext = document.getElementById("btn-next");
+let btnShuffle = document.getElementById("btn-shuffle");
+let btnRepeat = document.getElementById("btn-repeat");
+let btnAutoplay = document.getElementById("btn-autoplay");
+let volumeSlider = document.getElementById("volume-slider");
+let progressBar = document.getElementById("progress-bar");
+let progressFill = document.getElementById("progress-fill");
+
+let isShuffleOn = false;
+let isRepeatOneOn = false;
+let isAutoplayOn = true;
+let sectionsByName = {};
+
 // ESTADO GLOBAL
 let activePlaylist = []; 
 let currentFolderActive = "";
 let savedFolderPath = ""; 
 let currentTrackIndex = -1;
+
+function toAssetUrl(path) {
+    if (!path) return null;
+    try {
+        return window.__TAURI__.core.convertFileSrc(path);
+    } catch (error) {
+        console.error("No se pudo convertir la ruta a URL de asset:", error);
+        return null;
+    }
+}
+
+function folderIconSvg() {
+    return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>`;
+}
 
 function cleanTrackName(filename) {
     let name = filename;
@@ -101,16 +136,24 @@ refreshBtn.addEventListener("click", async () => {
 
 function processAndRenderFolders(sections) {
     folderList.innerHTML = "";
+    sectionsByName = {};
     if (sections.length === 0) {
         folderList.innerHTML = "<p style='color: #888; font-size: 13px; padding: 10px;'>Vacío</p>";
         return;
     }
 
     sections.forEach(section => {
+        sectionsByName[section.name] = section;
+
         let card = document.createElement("div");
         card.className = "folder-card";
+        let coverUrl = toAssetUrl(section.cover);
+        let coverHtml = coverUrl
+            ? `<img src="${coverUrl}" alt="${section.name}" />`
+            : folderIconSvg();
+
         card.innerHTML = `
-            <div class="folder-cover-placeholder">📁</div>
+            <div class="folder-cover-placeholder">${coverHtml}</div>
             <div class="folder-card-info">
                 <span class="folder-card-name">${section.name}</span>
                 <span class="folder-card-count">${section.count} pistas</span>
@@ -135,20 +178,43 @@ function playTrack(index) {
     currentTrackIndex = index;
     let track = activePlaylist[index];
     let cleanName = cleanTrackName(track);
+    let section = sectionsByName[currentFolderActive];
 
     trackTitle.textContent = cleanName;
-    trackArtist.textContent = `Artista: OMA / ${currentFolderActive}`;
+    trackArtist.textContent = `Artista: ${currentFolderActive}`;
     trackAlbum.textContent = `Álbum: ${currentFolderActive}`;
     sideTitle.textContent = cleanName;
-    sideArtist.textContent = `Artista: OMA / ${currentFolderActive}`;
+    sideArtist.textContent = `Artista: ${currentFolderActive}`;
     sideAlbum.textContent = `Álbum: ${currentFolderActive}`;
-    
+
+    updateCoverArt(section);
+
+    if (section && section.dirPath) {
+        let assetUrl = toAssetUrl(`${section.dirPath}/${track}`);
+        if (assetUrl) {
+            audioPlayer.src = assetUrl;
+            audioPlayer.play().catch((error) => console.error("No se pudo reproducir:", error));
+        }
+    }
+
     // RE-DIBUJAMOS AMBAS LISTAS PARA APLICAR EL EFECTO NEÓN A LA CANCIÓN ACTUAL
     renderPlaylistUI();
     renderUpNextList();
     
     folderTracksView.classList.add("hidden");
     nowPlayingView.classList.remove("hidden");
+}
+
+function updateCoverArt(section) {
+    let coverUrl = section ? toAssetUrl(section.cover) : null;
+    if (coverUrl) {
+        coverArtImg.src = coverUrl;
+        coverArtImg.classList.remove("hidden");
+        coverArtPlaceholder.classList.add("hidden");
+    } else {
+        coverArtImg.classList.add("hidden");
+        coverArtPlaceholder.classList.remove("hidden");
+    }
 }
 
 function renderUpNextList() {
@@ -253,4 +319,88 @@ btnBackToPlayer.addEventListener("click", () => {
 btnBackToFolders.addEventListener("click", () => {
     nowPlayingView.classList.add("hidden");
     folderTracksView.classList.remove("hidden");
+});
+
+// MOTOR DE AUDIO
+
+function setPlayIcon(isPlaying) {
+    btnPlay.textContent = isPlaying ? "⏸" : "▶";
+}
+
+btnPlay.addEventListener("click", () => {
+    if (!audioPlayer.src) return;
+    if (audioPlayer.paused) {
+        audioPlayer.play().catch((error) => console.error("No se pudo reproducir:", error));
+    } else {
+        audioPlayer.pause();
+    }
+});
+audioPlayer.addEventListener("play", () => setPlayIcon(true));
+audioPlayer.addEventListener("pause", () => setPlayIcon(false));
+
+btnPrev.addEventListener("click", () => {
+    if (activePlaylist.length === 0) return;
+    let prevIndex = currentTrackIndex - 1;
+    if (prevIndex < 0) prevIndex = activePlaylist.length - 1;
+    playTrack(prevIndex);
+});
+
+btnNext.addEventListener("click", () => {
+    if (activePlaylist.length === 0) return;
+    playTrack(getNextIndex());
+});
+
+function getNextIndex() {
+    if (isShuffleOn && activePlaylist.length > 1) {
+        let randomIndex;
+        do { randomIndex = Math.floor(Math.random() * activePlaylist.length); }
+        while (randomIndex === currentTrackIndex);
+        return randomIndex;
+    }
+    return (currentTrackIndex + 1) % activePlaylist.length;
+}
+
+audioPlayer.addEventListener("ended", () => {
+    if (isRepeatOneOn) {
+        audioPlayer.currentTime = 0;
+        audioPlayer.play();
+        return;
+    }
+    if (!isAutoplayOn) return;
+    if (activePlaylist.length === 0) return;
+    if (!isShuffleOn && currentTrackIndex >= activePlaylist.length - 1) return; // fin de la cola
+    playTrack(getNextIndex());
+});
+
+// ALEATORIO / REPETIR / AUTOPLAY
+btnShuffle.addEventListener("click", () => {
+    isShuffleOn = !isShuffleOn;
+    btnShuffle.classList.toggle("active", isShuffleOn);
+});
+btnRepeat.addEventListener("click", () => {
+    isRepeatOneOn = !isRepeatOneOn;
+    btnRepeat.classList.toggle("active", isRepeatOneOn);
+});
+btnAutoplay.addEventListener("click", () => {
+    isAutoplayOn = !isAutoplayOn;
+    btnAutoplay.classList.toggle("active", isAutoplayOn);
+});
+
+// VOLUMEN
+audioPlayer.volume = volumeSlider.value / 100;
+volumeSlider.addEventListener("input", () => {
+    audioPlayer.volume = volumeSlider.value / 100;
+});
+
+// BARRA DE PROGRESO
+audioPlayer.addEventListener("timeupdate", () => {
+    if (!audioPlayer.duration) return;
+    let pct = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+    progressFill.style.width = `${pct}%`;
+});
+progressBar.addEventListener("click", (e) => {
+    if (!audioPlayer.duration) return;
+    let rect = progressBar.getBoundingClientRect();
+    let ratio = (e.clientX - rect.left) / rect.width;
+    audioPlayer.currentTime = ratio * audioPlayer.duration;
 });

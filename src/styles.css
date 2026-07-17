@@ -46,7 +46,8 @@ body, html {
 .folder-grid { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex-grow: 1; padding-right: 5px;}
 .folder-card { flex-shrink: 0; display: flex; align-items: center; gap: 12px; background: #252525; padding: 10px; border-radius: 12px; cursor: pointer; border: 1px solid transparent; }
 .folder-card:hover { background: #2d2d2d; border-color: var(--accent); }
-.folder-cover-placeholder { width: 48px; height: 48px; background: linear-gradient(135deg, #444, #1e1e1e); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.folder-cover-placeholder { width: 48px; height: 48px; background: linear-gradient(135deg, #444, #1e1e1e); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #888; flex-shrink: 0; overflow: hidden; }
+.folder-cover-placeholder img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .folder-card-info { display: flex; flex-direction: column; overflow: hidden; }
 .folder-card-name { font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .folder-card-count { font-size: 12px; color: var(--text-secondary); }
@@ -107,7 +108,8 @@ body, html {
 .now-playing-layout.hide-queue { grid-template-columns: 1fr 0px; gap: 0; }
 
 .main-art-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-width: 0; }
-.album-art { width: 100%; max-width: 320px; aspect-ratio: 1; background: #1e1e1e; border-radius: 28px; display: flex; align-items: center; justify-content: center; font-size: 100px; box-shadow: 0 20px 60px rgba(0,0,0,0.7); flex-shrink: 0; }
+.album-art { width: 100%; max-width: 320px; aspect-ratio: 1; background: #1e1e1e; border-radius: 28px; display: flex; align-items: center; justify-content: center; font-size: 100px; box-shadow: 0 20px 60px rgba(0,0,0,0.7); flex-shrink: 0; overflow: hidden; position: relative; }
+.cover-art-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .home-centered-info { text-align: center; margin-top: 35px; width: 100%; padding: 0 20px; box-sizing: border-box; }
 .home-centered-info h1 { margin: 0 0 10px 0; font-size: 30px; font-weight: 900; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .home-centered-info h2 { margin: 0 0 6px 0; font-size: 18px; font-weight: 500; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
@@ -164,15 +166,33 @@ body, html {
 
 /* CONTROLES INFERIORES LIMPIOS */
 .controls { grid-row: 2 / 3; grid-column: 1 / -1; background-color: var(--panel-bg); display: flex; justify-content: space-between; align-items: center; padding: 0 25px; border-top: 1px solid #252525; height: 100%; box-sizing: border-box; gap: 20px; }
-.controls-center { display: flex; align-items: center; flex-grow: 1; min-width: 0; }
-.playback-controls { display: flex; gap: 25px; align-items: center; flex-shrink: 0;}
+.controls-center { display: flex; align-items: center; flex-grow: 1; min-width: 0; gap: 20px; }
+.playback-controls { display: flex; gap: 18px; align-items: center; flex-shrink: 0;}
 .controls button { background: none; border: none; color: var(--text); font-size: 28px; cursor: pointer; }
 .controls button:hover { color: var(--accent); }
-.progress-bar { flex-grow: 1; max-width: 800px; height: 6px; background-color: #333; border-radius: 3px; margin-left: 40px;}
-.progress { width: 45%; height: 100%; background-color: var(--accent); border-radius: 3px;}
+.progress-bar { flex-grow: 1; max-width: 800px; height: 6px; background-color: #333; border-radius: 3px; margin-left: 0; cursor: pointer; }
+.progress { width: 0%; height: 100%; background-color: var(--accent); border-radius: 3px; pointer-events: none; }
+
+/* Botones de modo: aleatorio / repetir / autoplay */
+.mode-btn { color: #666 !important; display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 6px; transition: 0.2s; }
+.mode-btn:hover { background: rgba(255,255,255,0.06); }
+.mode-btn.active { color: var(--accent) !important; background: rgba(186, 134, 252, 0.12); }
 
 /* Botones minimalistas a los costados del footer (cola / ajustes) */
 .footer-side-btn { width: 40px; height: 40px; flex-shrink: 0; }
+
+/* VOLUMEN: botón + panel que aparece al pasar el mouse */
+.volume-control { position: relative; display: flex; align-items: center; flex-shrink: 0; }
+.volume-popover {
+  position: absolute; bottom: calc(100% + 10px); right: -6px;
+  background: var(--panel-bg); border: 1px solid #333; border-radius: 10px;
+  padding: 10px 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  opacity: 0; visibility: hidden; transform: translateY(6px);
+  transition: all 0.18s ease; width: 130px;
+}
+.volume-control:hover .volume-popover,
+.volume-control:focus-within .volume-popover { opacity: 1; visibility: visible; transform: translateY(0); }
+.volume-popover input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
 
 /* MODAL DE AJUSTES */
 .settings-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 300; }
