@@ -31,6 +31,37 @@ let sideAlbum = document.getElementById("side-album");
 // Carátulas
 let coverArtImg = document.getElementById("cover-art-img");
 let coverArtPlaceholder = document.getElementById("cover-art-placeholder");
+let btnLike = document.getElementById("btn-like");
+
+// Letras
+let btnLyrics = document.getElementById("btn-lyrics");
+let btnLyricsSide = document.getElementById("btn-lyrics-side");
+let btnLyricsMain = document.getElementById("btn-lyrics-main");
+let lyricsModal = document.getElementById("lyrics-modal");
+let btnCloseLyrics = document.getElementById("btn-close-lyrics");
+let lyricsTextarea = document.getElementById("lyrics-textarea");
+let lyricsTrackName = document.getElementById("lyrics-track-name");
+let btnSaveLyrics = document.getElementById("btn-save-lyrics");
+
+// Letras — overlay difuminado en la vista principal
+let lyricsPanelMain = document.getElementById("lyrics-panel-main");
+let lyricsTextMain = document.getElementById("lyrics-text-main");
+let lyricsPanelTitleMain = document.getElementById("lyrics-panel-title-main");
+let lyricsPanelArtistMain = document.getElementById("lyrics-panel-artist-main");
+let btnCloseLyricsMain = document.getElementById("btn-close-lyrics-main");
+let btnEditLyricsMain = document.getElementById("btn-edit-lyrics-main");
+
+// Letras — panel inline debajo de la carátula en la vista de carpeta
+let sideTrackNormal = document.getElementById("side-track-normal");
+let sideLyricsView = document.getElementById("side-lyrics-view");
+let lyricsTextSide = document.getElementById("lyrics-text-side");
+let lyricsPanelTitleSide = document.getElementById("lyrics-panel-title-side");
+let btnCloseLyricsSide = document.getElementById("btn-close-lyrics-side");
+let btnEditLyricsSide = document.getElementById("btn-edit-lyrics-side");
+
+// Carátula del panel lateral (vista de carpeta)
+let sideCoverImg = document.getElementById("side-cover-img");
+let sideCoverPlaceholder = document.getElementById("side-cover-placeholder");
 
 // Motor de audio
 let audioPlayer = document.getElementById("audio-player");
@@ -42,10 +73,10 @@ let btnRepeat = document.getElementById("btn-repeat");
 let btnAutoplay = document.getElementById("btn-autoplay");
 let volumeSlider = document.getElementById("volume-slider");
 let progressBar = document.getElementById("progress-bar");
-let progressFill = document.getElementById("progress-fill");
+let spectrumCanvas = document.getElementById("spectrum-canvas");
 
 let isShuffleOn = false;
-let isRepeatOneOn = false;
+let repeatMode = "off"; // off -> all -> one -> off
 let isAutoplayOn = true;
 let sectionsByName = {};
 
@@ -65,8 +96,40 @@ function toAssetUrl(path) {
     }
 }
 
+// Las carátulas pueden venir como ruta de archivo (imagen suelta) o como
+// data:URI (carátula incrustada extraída del propio track). Solo las rutas
+// de archivo deben pasar por convertFileSrc; el data:URI se usa tal cual.
+function resolveCoverSrc(cover) {
+    if (!cover) return null;
+    if (cover.startsWith("data:")) return cover;
+    return toAssetUrl(cover);
+}
+
 function folderIconSvg() {
     return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>`;
+}
+
+function heartIconSvg() {
+    return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>`;
+}
+
+// ME GUSTA (persistente en localStorage)
+function getLikedTracks() {
+    try { return JSON.parse(localStorage.getItem("starwolf-likes") || "[]"); }
+    catch (error) { return []; }
+}
+function trackKey(track) { return `${track.dirPath}/${track.name}`; }
+function isLiked(track) {
+    return getLikedTracks().some((t) => trackKey(t) === trackKey(track));
+}
+function toggleLike(track) {
+    let liked = getLikedTracks();
+    let key = trackKey(track);
+    let existingIndex = liked.findIndex((t) => trackKey(t) === key);
+    if (existingIndex >= 0) liked.splice(existingIndex, 1);
+    else liked.push(track);
+    localStorage.setItem("starwolf-likes", JSON.stringify(liked));
+    refreshLikedCard();
 }
 
 function cleanTrackName(filename) {
@@ -112,6 +175,20 @@ document.querySelectorAll(".swatch").forEach((swatch) => {
     });
 });
 
+// TEMA CLARO / OSCURO
+let btnThemeDark = document.getElementById("btn-theme-dark");
+let btnThemeLight = document.getElementById("btn-theme-light");
+
+function applyTheme(theme) {
+    document.body.classList.toggle("light-theme", theme === "light");
+    btnThemeDark.classList.toggle("active", theme === "dark");
+    btnThemeLight.classList.toggle("active", theme === "light");
+    localStorage.setItem("starwolf-theme", theme);
+}
+btnThemeDark.addEventListener("click", () => applyTheme("dark"));
+btnThemeLight.addEventListener("click", () => applyTheme("light"));
+applyTheme(localStorage.getItem("starwolf-theme") || "dark");
+
 scanBtn.addEventListener("click", async () => {
     try {
         const { invoke } = window.__TAURI__.core;
@@ -139,6 +216,7 @@ function processAndRenderFolders(sections) {
     sectionsByName = {};
     if (sections.length === 0) {
         folderList.innerHTML = "<p style='color: #888; font-size: 13px; padding: 10px;'>Vacío</p>";
+        renderLikedCard();
         return;
     }
 
@@ -147,7 +225,7 @@ function processAndRenderFolders(sections) {
 
         let card = document.createElement("div");
         card.className = "folder-card";
-        let coverUrl = toAssetUrl(section.cover);
+        let coverUrl = resolveCoverSrc(section.cover);
         let coverHtml = coverUrl
             ? `<img src="${coverUrl}" alt="${section.name}" />`
             : folderIconSvg();
@@ -161,40 +239,76 @@ function processAndRenderFolders(sections) {
         `;
 
         card.addEventListener("click", () => {
-            nowPlayingView.classList.add("hidden");
-            folderTracksView.classList.remove("hidden");
-            selectedFolderTitle.textContent = section.name;
-            currentFolderActive = section.name;
-            activePlaylist = [...section.tracks];
-            btnBackToFolders.classList.remove("hidden");
-            renderPlaylistUI();
+            openFolderSection(section.name, section.tracks.map(name => ({ name, dirPath: section.dirPath, folder: section.name })));
         });
 
         folderList.appendChild(card);
     });
+
+    renderLikedCard();
 }
 
-function playTrack(index) {
+function openFolderSection(folderName, tracks) {
+    nowPlayingView.classList.add("hidden");
+    folderTracksView.classList.remove("hidden");
+    selectedFolderTitle.textContent = folderName;
+    currentFolderActive = folderName;
+    activePlaylist = tracks;
+    btnBackToFolders.classList.remove("hidden");
+    sideLyricsView.classList.remove("active");
+    sideTrackNormal.classList.remove("hidden");
+    updateSideCoverArt(sectionsByName[folderName]);
+    renderPlaylistUI();
+}
+
+// Tarjeta especial "Me gusta" que se antepone a la biblioteca
+function renderLikedCard() {
+    document.getElementById("liked-folder-card")?.remove();
+    let liked = getLikedTracks();
+
+    let card = document.createElement("div");
+    card.className = "folder-card";
+    card.id = "liked-folder-card";
+    card.innerHTML = `
+        <div class="folder-cover-placeholder" style="color:#ff4d6d;">${heartIconSvg()}</div>
+        <div class="folder-card-info">
+            <span class="folder-card-name">Me gusta</span>
+            <span class="folder-card-count">${liked.length} pistas</span>
+        </div>
+    `;
+    card.addEventListener("click", () => openFolderSection("Me gusta", getLikedTracks()));
+    folderList.prepend(card);
+}
+function refreshLikedCard() {
+    if (document.getElementById("liked-folder-card")) renderLikedCard();
+    renderPlaylistUI();
+    renderUpNextList();
+    updateLikeButton();
+}
+
+async function playTrack(index) {
     currentTrackIndex = index;
     let track = activePlaylist[index];
-    let cleanName = cleanTrackName(track);
-    let section = sectionsByName[currentFolderActive];
+    let cleanName = cleanTrackName(track.name);
+    let section = sectionsByName[track.folder];
 
     trackTitle.textContent = cleanName;
-    trackArtist.textContent = `Artista: ${currentFolderActive}`;
-    trackAlbum.textContent = `Álbum: ${currentFolderActive}`;
+    trackArtist.textContent = `Artista: ${track.folder}`;
+    trackAlbum.textContent = `Álbum: ${track.folder}`;
     sideTitle.textContent = cleanName;
-    sideArtist.textContent = `Artista: ${currentFolderActive}`;
-    sideAlbum.textContent = `Álbum: ${currentFolderActive}`;
+    sideArtist.textContent = `Artista: ${track.folder}`;
+    sideAlbum.textContent = `Álbum: ${track.folder}`;
 
-    updateCoverArt(section);
+    applyCoverToBothSlots(section ? resolveCoverSrc(section.cover) : null); // provisional, mientras llega la de la pista
+    updateLikeButton();
+    refreshLyricsDisplays(); // si el overlay o el panel lateral están abiertos, se actualizan a la nueva canción
+    loadTrackCover(track, section); // async: reemplaza por la carátula propia de ESTA canción si existe
 
-    if (section && section.dirPath) {
-        let assetUrl = toAssetUrl(`${section.dirPath}/${track}`);
-        if (assetUrl) {
-            audioPlayer.src = assetUrl;
-            audioPlayer.play().catch((error) => console.error("No se pudo reproducir:", error));
-        }
+    ensureAudioGraph();
+    let assetUrl = toAssetUrl(`${track.dirPath}/${track.name}`);
+    if (assetUrl) {
+        audioPlayer.src = assetUrl;
+        audioPlayer.play().catch((error) => console.error("No se pudo reproducir:", error));
     }
 
     // RE-DIBUJAMOS AMBAS LISTAS PARA APLICAR EL EFECTO NEÓN A LA CANCIÓN ACTUAL
@@ -205,17 +319,58 @@ function playTrack(index) {
     nowPlayingView.classList.remove("hidden");
 }
 
-function updateCoverArt(section) {
-    let coverUrl = section ? toAssetUrl(section.cover) : null;
+// Cada canción puede traer su propia carátula incrustada (distinta a la de
+// sus hermanas de carpeta). La pedimos al backend de forma asíncrona y,
+// si existe, sustituye a la portada "provisional" de la carpeta.
+let coverRequestToken = 0;
+async function loadTrackCover(track, section) {
+    let myToken = ++coverRequestToken;
+    let trackCover = null;
+    try {
+        const { invoke } = window.__TAURI__.core;
+        trackCover = await invoke("get_track_cover", { path: `${track.dirPath}/${track.name}` });
+    } catch (error) {
+        console.error("No se pudo leer la carátula de la pista:", error);
+    }
+    if (myToken !== coverRequestToken) return; // el usuario ya cambió de canción, ignorar respuesta vieja
+
+    let coverUrl = trackCover || (section ? resolveCoverSrc(section.cover) : null);
+    applyCoverToBothSlots(coverUrl);
+}
+
+function applyCoverToBothSlots(coverUrl) {
+    setCoverSlot(coverArtImg, coverArtPlaceholder, coverUrl);
+    setCoverSlot(sideCoverImg, sideCoverPlaceholder, coverUrl);
+}
+
+function setCoverSlot(imgEl, placeholderEl, coverUrl) {
     if (coverUrl) {
-        coverArtImg.src = coverUrl;
-        coverArtImg.classList.remove("hidden");
-        coverArtPlaceholder.classList.add("hidden");
+        imgEl.src = coverUrl;
+        imgEl.classList.remove("hidden");
+        placeholderEl.classList.add("hidden");
     } else {
-        coverArtImg.classList.add("hidden");
-        coverArtPlaceholder.classList.remove("hidden");
+        imgEl.classList.add("hidden");
+        placeholderEl.classList.remove("hidden");
     }
 }
+
+function updateCoverArt(section) {
+    setCoverSlot(coverArtImg, coverArtPlaceholder, section ? resolveCoverSrc(section.cover) : null);
+}
+
+function updateSideCoverArt(section) {
+    setCoverSlot(sideCoverImg, sideCoverPlaceholder, section ? resolveCoverSrc(section.cover) : null);
+}
+
+function updateLikeButton() {
+    let track = activePlaylist[currentTrackIndex];
+    btnLike.classList.toggle("liked", !!track && isLiked(track));
+}
+btnLike.addEventListener("click", () => {
+    let track = activePlaylist[currentTrackIndex];
+    if (!track) return;
+    toggleLike(track);
+});
 
 function renderUpNextList() {
     upNextList.innerHTML = "";
@@ -226,7 +381,7 @@ function renderUpNextList() {
 
     // Dibujamos TODAS las canciones de la cola para que puedas explorarla
     activePlaylist.forEach((track, i) => {
-        let cleanName = cleanTrackName(track);
+        let cleanName = cleanTrackName(track.name);
         let li = document.createElement("li");
         li.className = "up-next-item";
         
@@ -240,7 +395,7 @@ function renderUpNextList() {
 
         li.innerHTML = `
             <span class="up-next-title" title="${cleanName}">${prefix} ${cleanName}</span>
-            <span class="up-next-artist">${currentFolderActive}</span>
+            <span class="up-next-artist">${track.folder}</span>
         `;
         li.addEventListener("click", () => playTrack(i));
         upNextList.appendChild(li);
@@ -265,20 +420,26 @@ function renderPlaylistUI() {
             li.classList.add("playing-now");
         }
 
-        let cleanName = cleanTrackName(track);
-        let ext = track.split('.').pop();
+        let cleanName = cleanTrackName(track.name);
+        let ext = track.name.split('.').pop();
         let simulatedDuration = ["3:12", "4:05", "2:45", "3:58", "5:21"][index % 5];
         
         let prefix = (index === currentTrackIndex) ? "▶" : (index + 1);
+        let liked = isLiked(track);
 
         li.innerHTML = `
             <span class="track-index">${prefix}</span>
             <span class="track-name" title="${cleanName}">${cleanName}</span>
             <span class="track-badge">${ext.toUpperCase()}</span>
             <span class="track-duration">${simulatedDuration}</span>
+            <button class="track-like-btn ${liked ? "liked" : ""}" title="Me gusta">${heartIconSvg()}</button>
         `;
 
         li.addEventListener("click", () => playTrack(index));
+        li.querySelector(".track-like-btn").addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggleLike(track);
+        });
 
         li.addEventListener("dragstart", (e) => { li.classList.add("dragging"); e.dataTransfer.setData("text/plain", index); });
         li.addEventListener("dragover", (e) => {
@@ -361,14 +522,17 @@ function getNextIndex() {
 }
 
 audioPlayer.addEventListener("ended", () => {
-    if (isRepeatOneOn) {
+    if (repeatMode === "one") {
         audioPlayer.currentTime = 0;
         audioPlayer.play();
         return;
     }
     if (!isAutoplayOn) return;
     if (activePlaylist.length === 0) return;
-    if (!isShuffleOn && currentTrackIndex >= activePlaylist.length - 1) return; // fin de la cola
+    if (!isShuffleOn && currentTrackIndex >= activePlaylist.length - 1) {
+        if (repeatMode === "all") playTrack(0);
+        return;
+    }
     playTrack(getNextIndex());
 });
 
@@ -377,9 +541,14 @@ btnShuffle.addEventListener("click", () => {
     isShuffleOn = !isShuffleOn;
     btnShuffle.classList.toggle("active", isShuffleOn);
 });
+const REPEAT_MODES = ["off", "all", "one"];
+const REPEAT_TITLES = { off: "Repetir desactivado", all: "Repetir carpeta", one: "Repetir canción" };
 btnRepeat.addEventListener("click", () => {
-    isRepeatOneOn = !isRepeatOneOn;
-    btnRepeat.classList.toggle("active", isRepeatOneOn);
+    let nextIndex = (REPEAT_MODES.indexOf(repeatMode) + 1) % REPEAT_MODES.length;
+    repeatMode = REPEAT_MODES[nextIndex];
+    btnRepeat.classList.toggle("active", repeatMode !== "off");
+    btnRepeat.classList.toggle("repeat-one", repeatMode === "one");
+    btnRepeat.title = REPEAT_TITLES[repeatMode];
 });
 btnAutoplay.addEventListener("click", () => {
     isAutoplayOn = !isAutoplayOn;
@@ -392,15 +561,127 @@ volumeSlider.addEventListener("input", () => {
     audioPlayer.volume = volumeSlider.value / 100;
 });
 
-// BARRA DE PROGRESO
-audioPlayer.addEventListener("timeupdate", () => {
-    if (!audioPlayer.duration) return;
-    let pct = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-    progressFill.style.width = `${pct}%`;
-});
+// ESPECTRO DE AUDIO (bajos/altos) COMO BARRA DE PROGRESO
+let audioCtx = null, analyser = null, sourceNode = null, freqData = null;
+
+function ensureAudioGraph() {
+    if (audioCtx) return;
+    try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        sourceNode = audioCtx.createMediaElementSource(audioPlayer);
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 128;
+        analyser.smoothingTimeConstant = 0.8;
+        freqData = new Uint8Array(analyser.frequencyBinCount);
+        sourceNode.connect(analyser);
+        analyser.connect(audioCtx.destination);
+    } catch (error) {
+        console.error("No se pudo iniciar el analizador de audio:", error);
+    }
+}
+audioPlayer.addEventListener("play", () => { if (audioCtx && audioCtx.state === "suspended") audioCtx.resume(); });
+
+function resizeSpectrumCanvas() {
+    let rect = spectrumCanvas.getBoundingClientRect();
+    spectrumCanvas.width = rect.width * devicePixelRatio;
+    spectrumCanvas.height = rect.height * devicePixelRatio;
+}
+window.addEventListener("resize", resizeSpectrumCanvas);
+resizeSpectrumCanvas();
+
+let spectrumCtx = spectrumCanvas.getContext("2d");
+function drawSpectrum() {
+    requestAnimationFrame(drawSpectrum);
+    let w = spectrumCanvas.width, h = spectrumCanvas.height;
+    if (!w || !h) return;
+    spectrumCtx.clearRect(0, 0, w, h);
+
+    let accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#bb86fc";
+    let progressRatio = (audioPlayer.duration) ? audioPlayer.currentTime / audioPlayer.duration : 0;
+
+    if (analyser) analyser.getByteFrequencyData(freqData);
+
+    let barCount = 48;
+    let barWidth = w / barCount;
+    for (let i = 0; i < barCount; i++) {
+        let value = freqData ? freqData[i] / 255 : 0;
+        let barHeight = Math.max(h * 0.06, value * h);
+        let x = i * barWidth;
+        let isPast = (i / barCount) <= progressRatio;
+        spectrumCtx.fillStyle = isPast ? accent : "rgba(150,150,150,0.25)";
+        spectrumCtx.fillRect(x + 1, h - barHeight, barWidth - 2, barHeight);
+    }
+}
+requestAnimationFrame(drawSpectrum);
+
 progressBar.addEventListener("click", (e) => {
     if (!audioPlayer.duration) return;
     let rect = progressBar.getBoundingClientRect();
     let ratio = (e.clientX - rect.left) / rect.width;
     audioPlayer.currentTime = ratio * audioPlayer.duration;
+});
+
+// LETRAS
+function lyricsKey() {
+    let track = activePlaylist[currentTrackIndex];
+    return track ? `starwolf-lyrics:${track.dirPath}/${track.name}` : null;
+}
+
+// Mantiene sincronizado el texto mostrado (overlay principal + panel lateral)
+// con la canción actual. Se llama al abrir cualquiera de las dos vistas, al
+// guardar desde el modal de edición, y al cambiar de canción.
+function refreshLyricsDisplays() {
+    let track = activePlaylist[currentTrackIndex];
+    let text = track ? (localStorage.getItem(lyricsKey()) || "") : "";
+    let title = track ? cleanTrackName(track.name) : "";
+    let artist = track ? track.folder : "";
+
+    lyricsTextMain.textContent = text;
+    lyricsPanelTitleMain.textContent = title;
+    lyricsPanelArtistMain.textContent = artist ? `Artista: ${artist}` : "";
+
+    lyricsTextSide.textContent = text;
+    lyricsPanelTitleSide.textContent = title;
+}
+
+// Overlay difuminado sobre la carátula (vista "Ver Reproductor")
+btnLyricsMain.addEventListener("click", () => {
+    refreshLyricsDisplays();
+    lyricsPanelMain.classList.add("active");
+});
+btnCloseLyricsMain.addEventListener("click", () => lyricsPanelMain.classList.remove("active"));
+btnEditLyricsMain.addEventListener("click", () => openLyricsModal());
+
+// Panel inline debajo de la carátula (vista de carpeta)
+btnLyricsSide.addEventListener("click", () => {
+    refreshLyricsDisplays();
+    sideTrackNormal.classList.add("hidden");
+    sideLyricsView.classList.add("active");
+});
+btnCloseLyricsSide.addEventListener("click", () => {
+    sideLyricsView.classList.remove("active");
+    sideTrackNormal.classList.remove("hidden");
+});
+btnEditLyricsSide.addEventListener("click", () => openLyricsModal());
+
+// Acceso rápido del footer: sigue abriendo directamente el editor
+btnLyrics.addEventListener("click", () => openLyricsModal());
+
+function openLyricsModal() {
+    let track = activePlaylist[currentTrackIndex];
+    if (!track) { lyricsTrackName.textContent = "Selecciona una canción primero"; lyricsTextarea.value = ""; }
+    else {
+        lyricsTrackName.textContent = `Letras — ${cleanTrackName(track.name)}`;
+        lyricsTextarea.value = localStorage.getItem(lyricsKey()) || "";
+    }
+    lyricsModal.classList.remove("hidden");
+}
+btnCloseLyrics.addEventListener("click", () => lyricsModal.classList.add("hidden"));
+lyricsModal.addEventListener("click", (e) => { if (e.target === lyricsModal) lyricsModal.classList.add("hidden"); });
+btnSaveLyrics.addEventListener("click", () => {
+    let key = lyricsKey();
+    if (!key) return;
+    localStorage.setItem(key, lyricsTextarea.value);
+    lyricsModal.classList.add("hidden");
+    refreshLyricsDisplays(); // si el overlay/panel siguen abiertos, se actualizan sin tener que reabrirlos
 });

@@ -43,14 +43,39 @@
           
           <div class="now-playing-layout" id="now-playing-layout">
             <div class="main-art-container">
-              <div class="album-art">
+              <div class="album-art" id="album-art-main">
                 <img id="cover-art-img" class="cover-art-img hidden" alt="Carátula" />
                 <div class="placeholder-art" id="cover-art-placeholder">🎶</div>
+
+                <div class="lyrics-panel" id="lyrics-panel-main">
+                  <button class="lyrics-close-btn" id="btn-close-lyrics-main" title="Cerrar letra">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  </button>
+                  <div class="lyrics-panel-scroll">
+                    <p class="lyrics-panel-text" id="lyrics-text-main"></p>
+                  </div>
+                  <div class="lyrics-panel-footer">
+                    <div class="lyrics-panel-footer-info">
+                      <span class="lyrics-panel-title" id="lyrics-panel-title-main"></span>
+                      <span class="lyrics-panel-artist" id="lyrics-panel-artist-main"></span>
+                    </div>
+                    <button class="lyrics-edit-link" id="btn-edit-lyrics-main">Editar letra</button>
+                  </div>
+                </div>
               </div>
-              <div class="track-info home-centered-info">
-                <h1 id="track-title">Sin reproducir</h1>
+              <div class="track-info home-centered-info" id="track-info-main">
+                <div class="track-title-row">
+                  <h1 id="track-title">Sin reproducir</h1>
+                  <button id="btn-like" class="ghost-btn like-btn" title="Me gusta">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+                  </button>
+                </div>
                 <h2 id="track-artist">Artista: --</h2>
                 <h3 id="track-album">Álbum: --</h3>
+                <button id="btn-lyrics-main" class="back-btn lyrics-side-btn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                  Ver letras
+                </button>
               </div>
             </div>
 
@@ -80,11 +105,32 @@
             </div>
             
             <aside class="right-metadata-panel">
-              <div class="side-album-art">🎨</div>
-              <div class="side-track-details">
+              <div class="side-album-art" id="side-album-art">
+                <img id="side-cover-img" class="side-cover-img hidden" alt="Carátula" />
+                <span id="side-cover-placeholder">🎨</span>
+              </div>
+
+              <div class="side-track-details" id="side-track-normal">
                 <h3 id="side-title">Ninguna pista</h3>
                 <p id="side-artist">Artista: --</p>
                 <p id="side-album">Álbum: --</p>
+                <button id="btn-lyrics-side" class="back-btn lyrics-side-btn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                  Ver letras
+                </button>
+              </div>
+
+              <div class="side-lyrics-view" id="side-lyrics-view">
+                <div class="side-lyrics-header">
+                  <span class="side-lyrics-title" id="lyrics-panel-title-side"></span>
+                  <button class="ghost-btn" id="btn-close-lyrics-side" title="Cerrar letra">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  </button>
+                </div>
+                <div class="side-lyrics-scroll">
+                  <p class="lyrics-panel-text" id="lyrics-text-side"></p>
+                </div>
+                <button class="lyrics-edit-link" id="btn-edit-lyrics-side">Editar letra</button>
               </div>
             </aside>
           </div>
@@ -117,7 +163,9 @@
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
             </button>
           </div>
-          <div class="progress-bar" id="progress-bar"><div class="progress" id="progress-fill"></div></div>
+          <div class="progress-bar" id="progress-bar">
+            <canvas id="spectrum-canvas"></canvas>
+          </div>
           <div class="volume-control">
             <button id="btn-volume" class="mode-btn" title="Volumen">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
@@ -127,6 +175,15 @@
             </div>
           </div>
         </div>
+
+        <button id="btn-lyrics" class="ghost-btn footer-side-btn" title="Letras">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            <line x1="9" y1="7" x2="15" y2="7"></line>
+            <line x1="9" y1="11" x2="15" y2="11"></line>
+          </svg>
+        </button>
 
         <button id="btn-settings" class="ghost-btn footer-side-btn" title="Ajustes">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -154,6 +211,24 @@
             <button class="swatch" data-color="#fc8ce8" style="background:#fc8ce8" title="Rosa"></button>
             <button class="swatch" data-color="#63d471" style="background:#63d471" title="Verde"></button>
           </div>
+          <label class="settings-label" style="margin-top:16px;">Tema</label>
+          <div class="theme-toggle">
+            <button id="btn-theme-dark" class="theme-option active" data-theme="dark">Oscuro</button>
+            <button id="btn-theme-light" class="theme-option" data-theme="light">Claro</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="lyrics-modal" class="settings-modal hidden">
+        <div class="settings-panel lyrics-modal-panel">
+          <div class="settings-panel-header">
+            <h3 id="lyrics-track-name">Letras</h3>
+            <button id="btn-close-lyrics" class="ghost-btn" title="Cerrar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+          </div>
+          <textarea id="lyrics-textarea" class="lyrics-textarea" placeholder="Pega o escribe la letra de esta canción..."></textarea>
+          <button id="btn-save-lyrics" class="theme-option active" style="margin-top:12px;">Guardar</button>
         </div>
       </div>
 
