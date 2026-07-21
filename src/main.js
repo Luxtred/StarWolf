@@ -32,6 +32,8 @@ let sideAlbum = document.getElementById("side-album");
 let coverArtImg = document.getElementById("cover-art-img");
 let coverArtPlaceholder = document.getElementById("cover-art-placeholder");
 let btnLike = document.getElementById("btn-like");
+let lyricsPanelBg = document.getElementById("lyrics-panel-bg");
+let btnLikeLyrics = document.getElementById("btn-like-lyrics");
 
 // Letras
 let btnLyrics = document.getElementById("btn-lyrics");
@@ -74,6 +76,8 @@ let btnAutoplay = document.getElementById("btn-autoplay");
 let volumeSlider = document.getElementById("volume-slider");
 let progressBar = document.getElementById("progress-bar");
 let spectrumCanvas = document.getElementById("spectrum-canvas");
+let timeCurrentEl = document.getElementById("time-current");
+let timeDurationEl = document.getElementById("time-duration");
 
 let isShuffleOn = false;
 let repeatMode = "off"; // off -> all -> one -> off
@@ -286,12 +290,16 @@ function refreshLikedCard() {
     updateLikeButton();
 }
 
+// REPRODUCCIÓN DE AUDIO (Rust + rodio: MP3, M4A, FLAC, Opus, WAV, Vorbis)
+let isPlaying = false;
+
 async function playTrack(index) {
     currentTrackIndex = index;
     let track = activePlaylist[index];
     let cleanName = cleanTrackName(track.name);
     let section = sectionsByName[track.folder];
 
+    // 1. Actualizar textos de la interfaz
     trackTitle.textContent = cleanName;
     trackArtist.textContent = `Artista: ${track.folder}`;
     trackAlbum.textContent = `Álbum: ${track.folder}`;
@@ -299,24 +307,73 @@ async function playTrack(index) {
     sideArtist.textContent = `Artista: ${track.folder}`;
     sideAlbum.textContent = `Álbum: ${track.folder}`;
 
-    applyCoverToBothSlots(section ? resolveCoverSrc(section.cover) : null); // provisional, mientras llega la de la pista
+    // 2. Actualizar portadas, botones y letras
+    applyCoverToBothSlots(section ? resolveCoverSrc(section.cover) : null);
     updateLikeButton();
-    refreshLyricsDisplays(); // si el overlay o el panel lateral están abiertos, se actualizan a la nueva canción
-    loadTrackCover(track, section); // async: reemplaza por la carátula propia de ESTA canción si existe
+    refreshLyricsDisplays();
+    loadTrackCover(track, section);
 
+    // 3. Preparar el grafo de audio (para el espectro visual)
     ensureAudioGraph();
-    let assetUrl = toAssetUrl(`${track.dirPath}/${track.name}`);
-    if (assetUrl) {
-        audioPlayer.src = assetUrl;
+    
+    // --- 4. ENFOQUE ÚNICO DE PROTOCOLOS (Corregido) ---
+    // Codificamos las carpetas y el archivo para proteger espacios, acentos y corchetes []
+    let safeDirPath = track.dirPath.split('/').map(encodeURIComponent).join('/');
+    let safeName = encodeURIComponent(track.name);
+    let fullSafePath = `${safeDirPath}/${safeName}`;
+    
+    // TODAS las canciones (opus, m4a, mp3...) pasan ahora por nuestro protocolo media:// en Rust
+    let finalAudioUrl = toMediaUrl(fullSafePath);
+
+    // 5. Reproducir
+    if (finalAudioUrl) {
+        audioPlayer.src = finalAudioUrl;
         audioPlayer.play().catch((error) => console.error("No se pudo reproducir:", error));
     }
 
-    // RE-DIBUJAMOS AMBAS LISTAS PARA APLICAR EL EFECTO NEÓN A LA CANCIÓN ACTUAL
+    // 6. Buscar letras y renderizar listas
+    if (typeof fetchLyricsFromLRCLib === "function") {
+        fetchLyricsFromLRCLib(cleanName, track.folder);
+    }
+
     renderPlaylistUI();
     renderUpNextList();
-    
-    folderTracksView.classList.add("hidden");
-    nowPlayingView.classList.remove("hidden");
+}
+
+// LRCLIB: busca y carga letras sincronizadas
+async function fetchLyricsFromLRCLib(trackName, artistName) {
+    try {
+        let trackEnc = encodeURIComponent(trackName);
+        let artistEnc = encodeURIComponent(artistName);
+        
+        let response = await fetch(
+            `https://lrclib.net/api/get?track_name=${trackEnc}&artist_name=${artistEnc}`
+        );
+        
+        if (!response.ok) {
+            console.log("LRCLib: no encontró resultado para", trackName, artistName);
+            return;
+        }
+        
+        let data = await response.json();
+        if (data.syncedLyrics) {
+            let storageKey = lyricsKey(); // <-- ¡Nombre corregido!
+            if (storageKey) {
+                localStorage.setItem(storageKey, data.syncedLyrics);
+                refreshLyricsDisplays(); 
+                console.log("LRCLib: letras sincronizadas cargadas");
+            }
+        } else if (data.plainLyrics) {
+            let storageKey = lyricsKey(); // <-- ¡Nombre corregido!
+            if (storageKey) {
+                localStorage.setItem(storageKey, data.plainLyrics);
+                refreshLyricsDisplays();
+                console.log("LRCLib: letras sin sincronización");
+            }
+        }
+    } catch (error) {
+        console.error("Error al buscar en LRCLib:", error);
+    }
 }
 
 // Cada canción puede traer su propia carátula incrustada (distinta a la de
@@ -341,6 +398,7 @@ async function loadTrackCover(track, section) {
 function applyCoverToBothSlots(coverUrl) {
     setCoverSlot(coverArtImg, coverArtPlaceholder, coverUrl);
     setCoverSlot(sideCoverImg, sideCoverPlaceholder, coverUrl);
+    lyricsPanelBg.style.backgroundImage = coverUrl ? `url("${coverUrl}")` : "none";
 }
 
 function setCoverSlot(imgEl, placeholderEl, coverUrl) {
@@ -364,9 +422,16 @@ function updateSideCoverArt(section) {
 
 function updateLikeButton() {
     let track = activePlaylist[currentTrackIndex];
-    btnLike.classList.toggle("liked", !!track && isLiked(track));
+    let liked = !!track && isLiked(track);
+    btnLike.classList.toggle("liked", liked);
+    btnLikeLyrics.classList.toggle("liked", liked);
 }
 btnLike.addEventListener("click", () => {
+    let track = activePlaylist[currentTrackIndex];
+    if (!track) return;
+    toggleLike(track);
+});
+btnLikeLyrics.addEventListener("click", () => {
     let track = activePlaylist[currentTrackIndex];
     if (!track) return;
     toggleLike(track);
@@ -482,11 +547,20 @@ btnBackToFolders.addEventListener("click", () => {
     folderTracksView.classList.remove("hidden");
 });
 
-// MOTOR DE AUDIO
+// --- MOTOR DE AUDIO ---
+
+function toMediaUrl(path) {
+    if (!path) return null;
+    // Ahora apunta al micro-servidor de Rust
+    return `http://127.0.0.1:18543${path}`; 
+}
 
 function setPlayIcon(isPlaying) {
     btnPlay.textContent = isPlaying ? "⏸" : "▶";
 }
+
+audioPlayer.addEventListener("play", () => setPlayIcon(true));
+audioPlayer.addEventListener("pause", () => setPlayIcon(false));
 
 btnPlay.addEventListener("click", () => {
     if (!audioPlayer.src) return;
@@ -496,8 +570,6 @@ btnPlay.addEventListener("click", () => {
         audioPlayer.pause();
     }
 });
-audioPlayer.addEventListener("play", () => setPlayIcon(true));
-audioPlayer.addEventListener("pause", () => setPlayIcon(false));
 
 btnPrev.addEventListener("click", () => {
     if (activePlaylist.length === 0) return;
@@ -561,7 +633,7 @@ volumeSlider.addEventListener("input", () => {
     audioPlayer.volume = volumeSlider.value / 100;
 });
 
-// ESPECTRO DE AUDIO (bajos/altos) COMO BARRA DE PROGRESO
+// ESPECTRO DE AUDIO REAL CON WEB AUDIO API
 let audioCtx = null, analyser = null, sourceNode = null, freqData = null;
 
 function ensureAudioGraph() {
@@ -580,6 +652,23 @@ function ensureAudioGraph() {
     }
 }
 audioPlayer.addEventListener("play", () => { if (audioCtx && audioCtx.state === "suspended") audioCtx.resume(); });
+
+function formatTime(seconds) {
+    if (!isFinite(seconds) || seconds < 0) return "0:00";
+    let mins = Math.floor(seconds / 60);
+    let secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+}
+audioPlayer.addEventListener("loadedmetadata", () => {
+    timeDurationEl.textContent = formatTime(audioPlayer.duration);
+});
+audioPlayer.addEventListener("timeupdate", () => {
+    timeCurrentEl.textContent = formatTime(audioPlayer.currentTime);
+});
+audioPlayer.addEventListener("emptied", () => {
+    timeCurrentEl.textContent = "0:00";
+    timeDurationEl.textContent = "0:00";
+});
 
 function resizeSpectrumCanvas() {
     let rect = spectrumCanvas.getBoundingClientRect();

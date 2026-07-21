@@ -2,10 +2,8 @@ use std::fs;
 use std::path::Path;
 use lofty::probe::Probe;
 use lofty::file::TaggedFileExt;
-use lofty::prelude::*;
 use base64::Engine;
 
-// Etiquetas estrictas para evitar el "undefined" en JavaScript
 #[derive(serde::Serialize)]
 struct FolderSection {
     #[serde(rename = "name")]
@@ -31,6 +29,9 @@ struct ScanResult {
 const IMAGE_EXTENSIONS: [&str; 4] = ["jpg", "jpeg", "png", "webp"];
 const PRIORITY_COVER_NAMES: [&str; 6] = ["cover", "folder", "art", "artwork", "portada", "caratula"];
 
+// Todos los formatos que el escáner detectará
+const AUDIO_EXTENSIONS: [&str; 6] = ["opus", "m4a", "mp3", "ogg", "flac", "wav"];
+
 fn extract_embedded_cover(track_path: &Path) -> Option<String> {
     let tagged_file = Probe::open(track_path).ok()?.read().ok()?;
     let tag = tagged_file.primary_tag().or_else(|| tagged_file.first_tag())?;
@@ -53,7 +54,7 @@ fn find_cover(dir: &Path) -> Option<String> {
             None => continue,
         };
 
-        if extension == "opus" && first_track.is_none() {
+        if AUDIO_EXTENSIONS.contains(&extension.as_str()) && first_track.is_none() {
             first_track = Some(path.clone());
         }
 
@@ -68,8 +69,6 @@ fn find_cover(dir: &Path) -> Option<String> {
         }
     }
 
-    // Si no hay una imagen suelta en la carpeta, intentamos con la carátula
-    // incrustada (METADATA_BLOCK_PICTURE) del primer track encontrado.
     fallback.or_else(|| first_track.and_then(|track| extract_embedded_cover(&track)))
 }
 
@@ -88,7 +87,8 @@ fn perform_scan(base_path: &Path) -> Vec<FolderSection> {
                         let sub_path = sub_entry.path();
                         if sub_path.is_file() {
                             if let Some(extension) = sub_path.extension() {
-                                if extension == "opus" {
+                                let ext_str = extension.to_string_lossy().to_lowercase();
+                                if AUDIO_EXTENSIONS.contains(&ext_str.as_str()) {
                                     if let Some(name) = sub_path.file_name() {
                                         tracks.push(name.to_string_lossy().into_owned());
                                     }
@@ -117,7 +117,8 @@ fn perform_scan(base_path: &Path) -> Vec<FolderSection> {
             let path = entry.path();
             if path.is_file() {
                 if let Some(extension) = path.extension() {
-                    if extension == "opus" {
+                    let ext_str = extension.to_string_lossy().to_lowercase();
+                    if AUDIO_EXTENSIONS.contains(&ext_str.as_str()) {
                         if let Some(name) = path.file_name() {
                             root_tracks.push(name.to_string_lossy().into_owned());
                         }
@@ -163,19 +164,47 @@ fn refresh_music_folder(folder_path: &str) -> Vec<FolderSection> {
     perform_scan(base_path)
 }
 
-// Carátula incrustada de UNA pista puntual (cada canción puede traer una
-// portada distinta dentro de su propio archivo .opus, a diferencia de
-// `find_cover`, que solo mira la primera pista de la carpeta).
 #[tauri::command]
 fn get_track_cover(path: &str) -> Option<String> {
     extract_embedded_cover(Path::new(path))
 }
 
+// Helper dinámico para inyectar el Content-Type adecuado
+fn get_mime_type(path: &str) -> &'static str {
+    let lower = path.to_lowercase();
+    if lower.ends_with(".opus") || lower.ends_with(".ogg") { "audio/ogg" } 
+    else if lower.ends_with(".m4a") { "audio/mp4" }
+    else if lower.ends_with(".mp3") { "audio/mpeg" }
+    else if lower.ends_with(".flac") { "audio/flac" }
+    else if lower.ends_with(".wav") { "audio/wav" }
+    else { "application/octet-stream" }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // 🔥 PLAN B: Levantamos un servidor web local invisible en un hilo secundario
+    std::thread::spawn(|| {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            // ServeDir="/" permite acceder a todo el disco usando rutas normales de Linux
+            let app = axum::Router::new()
+                .fallback_service(tower_http::services::ServeDir::new("/"))
+                .layer(tower_http::cors::CorsLayer::permissive());
+            
+            // Elegimos un puerto al azar (18543)
+            if let Ok(listener) = tokio::net::TcpListener::bind("127.0.0.1:18543").await {
+                println!("🚀 Servidor local de audio activo en http://127.0.0.1:18543");
+                let _ = axum::serve(listener, app).await;
+            }
+        });
+    });
+
     tauri::Builder::default()
-        .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![select_and_scan_music, refresh_music_folder, get_track_cover])
+        .invoke_handler(tauri::generate_handler![
+            select_and_scan_music, 
+            refresh_music_folder, 
+            get_track_cover
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

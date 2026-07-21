@@ -42,26 +42,10 @@
           </div>
           
           <div class="now-playing-layout" id="now-playing-layout">
-            <div class="main-art-container">
+            <div class="main-art-container" id="main-art-container">
               <div class="album-art" id="album-art-main">
                 <img id="cover-art-img" class="cover-art-img hidden" alt="Carátula" />
                 <div class="placeholder-art" id="cover-art-placeholder">🎶</div>
-
-                <div class="lyrics-panel" id="lyrics-panel-main">
-                  <button class="lyrics-close-btn" id="btn-close-lyrics-main" title="Cerrar letra">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                  </button>
-                  <div class="lyrics-panel-scroll">
-                    <p class="lyrics-panel-text" id="lyrics-text-main"></p>
-                  </div>
-                  <div class="lyrics-panel-footer">
-                    <div class="lyrics-panel-footer-info">
-                      <span class="lyrics-panel-title" id="lyrics-panel-title-main"></span>
-                      <span class="lyrics-panel-artist" id="lyrics-panel-artist-main"></span>
-                    </div>
-                    <button class="lyrics-edit-link" id="btn-edit-lyrics-main">Editar letra</button>
-                  </div>
-                </div>
               </div>
               <div class="track-info home-centered-info" id="track-info-main">
                 <div class="track-title-row">
@@ -76,6 +60,31 @@
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
                   Ver letras
                 </button>
+              </div>
+
+              <!-- Escenario de letras: cubre TODO el main-art-container (no solo
+                   la carátula) para que la carátula difuminada quede de fondo y
+                   el título/opciones queden justo arriba del footer -->
+              <div class="lyrics-panel" id="lyrics-panel-main">
+                <div class="lyrics-panel-bg" id="lyrics-panel-bg"></div>
+                <button class="lyrics-close-btn" id="btn-close-lyrics-main" title="Cerrar letra">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+                <div class="lyrics-panel-scroll">
+                  <p class="lyrics-panel-text" id="lyrics-text-main"></p>
+                </div>
+                <div class="lyrics-panel-footer">
+                  <div class="lyrics-panel-footer-info">
+                    <span class="lyrics-panel-title" id="lyrics-panel-title-main"></span>
+                    <span class="lyrics-panel-artist" id="lyrics-panel-artist-main"></span>
+                  </div>
+                  <div class="lyrics-panel-footer-actions">
+                    <button class="ghost-btn like-btn" id="btn-like-lyrics" title="Me gusta">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg>
+                    </button>
+                    <button class="lyrics-edit-link" id="btn-edit-lyrics-main">Editar letra</button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -163,9 +172,11 @@
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
             </button>
           </div>
+          <span class="time-label" id="time-current">0:00</span>
           <div class="progress-bar" id="progress-bar">
             <canvas id="spectrum-canvas"></canvas>
           </div>
+          <span class="time-label" id="time-duration">0:00</span>
           <div class="volume-control">
             <button id="btn-volume" class="mode-btn" title="Volumen">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
@@ -193,7 +204,8 @@
         </button>
       </footer>
 
-      <audio id="audio-player"></audio>
+
+      <audio id="audio-player" crossorigin="anonymous" style="display: none;"></audio>
 
       <div id="settings-modal" class="settings-modal hidden">
         <div class="settings-panel">

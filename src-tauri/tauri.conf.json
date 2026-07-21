@@ -6,23 +6,29 @@
   "build": {
     "frontendDist": "../src"
   },
-  "app": {
-    "withGlobalTauri": true,
+"app": {
+  "withGlobalTauri": true,
     "windows": [
       {
-        "title": "starwolfv1",
-        "width": 800,
-        "height": 600
+        "title": "StarWolf",
+        "width": 1024,
+        "height": 768,
+        "resizable": true,
+        "fullscreen": false
       }
     ],
     "security": {
       "csp": null,
       "assetProtocol": {
         "enable": true,
-        "scope": ["**"]
+        "scope": [
+          "**",
+          "/home/luxtred/Música/**"
+        ]
       }
     }
   },
+
   "bundle": {
     "active": true,
     "targets": "all",

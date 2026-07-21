@@ -198,6 +198,7 @@ body, html {
 .controls button:hover { color: var(--accent); }
 .progress-bar { flex-grow: 1; max-width: none; height: 44px; background-color: transparent; border-radius: 3px; margin-left: 0; cursor: pointer; }
 #spectrum-canvas { width: 100%; height: 100%; display: block; }
+.time-label { flex-shrink: 0; font-size: 12px; font-variant-numeric: tabular-nums; color: var(--text-secondary); min-width: 36px; text-align: center; user-select: none; }
 
 /* Botones de modo: aleatorio / repetir / autoplay */
 .mode-btn { position: relative; color: #666 !important; display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 6px; transition: 0.2s; }
@@ -253,42 +254,58 @@ body, html {
 .track-like-btn.liked { color: #ff4d6d; }
 .track-like-btn.liked svg { fill: #ff4d6d; }
 
-/* LETRAS — VISTA PRINCIPAL (overlay difuminado tipo Spotify, sobre la carátula) */
+/* LETRAS — VISTA PRINCIPAL (la carátula pasa de fondo difuminada, cubre
+   todo el escenario del reproductor; título/opciones quedan justo arriba
+   de la barra de tiempo del footer, y la letra queda centrada en medio) */
+.main-art-container { position: relative; }
+
 .lyrics-panel {
-  position: absolute; inset: 0; z-index: 5; border-radius: inherit;
+  position: absolute; inset: 0; z-index: 5; border-radius: 24px; overflow: hidden;
   display: flex; flex-direction: column;
-  background: rgba(10,10,14,0.55);
-  backdrop-filter: blur(24px) brightness(0.7);
-  -webkit-backdrop-filter: blur(24px) brightness(0.7);
+  background: #0c0c10;
   opacity: 0; visibility: hidden; transform: scale(0.97);
-  transition: opacity 0.35s ease, transform 0.35s ease, visibility 0.35s;
+  transition: opacity 0.45s ease, transform 0.45s ease, visibility 0.45s;
 }
 .lyrics-panel.active { opacity: 1; visibility: visible; transform: scale(1); }
 
+.lyrics-panel-bg {
+  position: absolute; inset: -25px; z-index: 0;
+  background-size: cover; background-position: center;
+  filter: blur(50px) brightness(0.5) saturate(1.2);
+  transform: scale(1.15);
+}
+
 .lyrics-close-btn {
-  position: absolute; top: 12px; right: 12px; z-index: 2;
+  position: relative; z-index: 1; align-self: flex-end; margin: 12px 12px 0 0;
   background: rgba(0,0,0,0.35); border: none; color: #fff; border-radius: 50%;
-  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;
+  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; flex-shrink: 0;
 }
 .lyrics-close-btn:hover { background: rgba(0,0,0,0.6); }
 
-.lyrics-panel-scroll { flex: 1; overflow-y: auto; padding: 50px 26px 10px; display: flex; align-items: center; }
+.lyrics-panel-scroll { position: relative; z-index: 1; flex: 1; overflow-y: auto; padding: 20px 32px; display: flex; align-items: center; }
 .lyrics-panel-text {
-  margin: 0; width: 100%; color: #fff; font-size: 17px; font-weight: 700; line-height: 1.7;
-  text-align: center; white-space: pre-wrap; text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  margin: 0; width: 100%; color: #fff; font-size: 18px; font-weight: 700; line-height: 1.8;
+  text-align: center; white-space: pre-wrap; text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+  animation: lyricsFadeIn 0.5s ease 0.1s both;
 }
 .lyrics-panel-text:empty::before {
   content: "Aún no agregaste la letra de esta canción.";
   color: rgba(255,255,255,0.6); font-weight: 500; font-size: 14px;
 }
+@keyframes lyricsFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
 .lyrics-panel-footer {
-  flex-shrink: 0; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  background: linear-gradient(transparent, rgba(0,0,0,0.75) 45%);
+  position: relative; z-index: 1; flex-shrink: 0; padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.8) 55%);
 }
 .lyrics-panel-footer-info { display: flex; flex-direction: column; min-width: 0; }
-.lyrics-panel-title { font-size: 14px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lyrics-panel-title { font-size: 15px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lyrics-panel-artist { font-size: 12px; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lyrics-panel-footer-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.lyrics-panel-footer-actions .like-btn { color: rgba(255,255,255,0.8); }
+.lyrics-panel-footer-actions .like-btn:hover { color: #fff; background: rgba(255,255,255,0.12); }
+.lyrics-panel-footer-actions .like-btn.liked { color: #ff4d6d; }
+.lyrics-panel-footer-actions .like-btn.liked svg { fill: #ff4d6d; }
 
 .lyrics-edit-link {
   flex-shrink: 0; background: rgba(255,255,255,0.14); border: none; color: #fff; font-size: 11px; font-weight: 700;
@@ -296,17 +313,25 @@ body, html {
 }
 .lyrics-edit-link:hover { background: var(--accent); color: #000; }
 
-/* LETRAS — VISTA DE CARPETA (debajo de la carátula, sin difuminado) */
-.side-lyrics-view { width: 100%; display: none; flex-direction: column; min-width: 0; }
-.side-lyrics-view.active { display: flex; }
-.side-lyrics-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+/* LETRAS — VISTA DE CARPETA (caja expandible debajo de la carátula) */
+.side-lyrics-view {
+  width: 100%; display: flex; flex-direction: column; min-width: 0;
+  max-height: 0; opacity: 0; overflow: hidden;
+  transition: max-height 0.45s cubic-bezier(0.25,1,0.5,1), opacity 0.3s ease;
+}
+.side-lyrics-view.active { max-height: 2000px; opacity: 1; flex: 1 1 auto; min-height: 0; }
+.side-lyrics-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-shrink: 0; }
 .side-lyrics-title { font-size: 15px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.side-lyrics-scroll {
+  flex: 1; min-height: 140px; overflow-y: auto; padding: 14px;
+  background: var(--surface-soft); border: 1px solid var(--border-color); border-radius: 12px;
+}
 .side-lyrics-scroll .lyrics-panel-text {
-  color: var(--text); font-size: 14px; font-weight: 500; text-align: left; text-shadow: none; line-height: 1.6;
+  color: var(--text); font-size: 14px; font-weight: 500; text-align: left; text-shadow: none; line-height: 1.7; animation: none;
 }
 .side-lyrics-scroll .lyrics-panel-text:empty::before { color: var(--text-secondary); font-weight: 400; }
 .side-lyrics-view .lyrics-edit-link {
-  margin-top: 12px; align-self: flex-start; background: var(--card-bg); color: var(--text);
+  margin-top: 12px; align-self: flex-start; flex-shrink: 0; background: var(--card-bg); color: var(--text);
 }
 .side-lyrics-view .lyrics-edit-link:hover { background: var(--accent); color: #000; }
 .lyrics-modal-panel { width: 380px; }
