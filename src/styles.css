@@ -1,3 +1,6 @@
+/* ========================================================= */
+/* 1. VARIABLES GLOBALES Y TEMAS                             */
+/* ========================================================= */
 :root {
   --bg-color: #121212;
   --panel-bg: #1e1e1e;
@@ -5,12 +8,13 @@
   --accent: #bb86fc; 
   --text: #ffffff;
   --text-secondary: #aaaaaa;
+  --text-muted: #888888;
   --border-color: #252525;
   --canvas-gradient-a: #252525;
   --canvas-gradient-b: #121212;
-  --surface-soft: rgba(255,255,255,0.03);
+  --surface-soft: rgba(255, 255, 255, 0.03);
   --surface-soft-hover: rgba(186, 134, 252, 0.1);
-  --surface-strong: rgba(0,0,0,0.2);
+  --surface-strong: rgba(0, 0, 0, 0.2);
 }
 
 body.light-theme {
@@ -19,69 +23,196 @@ body.light-theme {
   --card-bg: #e2e1e6;
   --text: #262626;
   --text-secondary: #6b6b6f;
+  --text-muted: #999999;
   --border-color: #d8d7dc;
   --canvas-gradient-a: #f4f3f6;
   --canvas-gradient-b: #e3e2e6;
-  --surface-soft: rgba(0,0,0,0.035);
+  --surface-soft: rgba(0, 0, 0, 0.035);
   --surface-soft-hover: rgba(120, 80, 180, 0.1);
-  --surface-strong: rgba(0,0,0,0.05);
+  --surface-strong: rgba(0, 0, 0, 0.05);
 }
 
+/* ========================================================= */
+/* 2. BASE Y RESET                                           */
+/* ========================================================= */
 body, html {
-  margin: 0; padding: 0; 
-  height: 100vh; width: 100vw;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
   font-family: system-ui, sans-serif;
-  background-color: var(--bg-color); color: var(--text);
+  background-color: var(--bg-color);
+  color: var(--text);
   overflow: hidden;
 }
 
-/* CUADRÍCULA MAESTRA Y ANIMACIÓN DE OCULTAMIENTO */
+.hidden {
+  display: none !important;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* ========================================================= */
+/* 3. LAYOUT PRINCIPAL (GRID)                                */
+/* ========================================================= */
 .app-container {
   display: grid; 
   grid-template-columns: 280px 1fr; 
   grid-template-rows: calc(100vh - 90px) 90px; 
-  height: 100vh; width: 100vw;
+  height: 100vh;
+  width: 100vw;
   transition: grid-template-columns 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.app-container.hide-sidebar { grid-template-columns: 64px 1fr; }
-
-/* BARRA LATERAL Y TOOLBAR */
-.sidebar {
-  background-color: var(--panel-bg); padding: 20px; grid-row: 1 / 2; grid-column: 1 / 2;
-  border-right: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 15px; 
-  overflow: hidden; white-space: nowrap; transition: padding 0.4s ease;
+.app-container.hide-sidebar {
+  grid-template-columns: 64px 1fr;
 }
+
+.player-main {
+  grid-row: 1 / 2; 
+  grid-column: 2 / 3; 
+  background: radial-gradient(circle at center, var(--canvas-gradient-a) 0%, var(--canvas-gradient-b) 100%);
+  padding: 30px; 
+  display: flex; 
+  flex-direction: column; 
+  overflow: hidden; 
+  min-height: 0; 
+  min-width: 0;
+  position: relative;
+}
+
+.center-view {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* ========================================================= */
+/* 4. BARRA LATERAL (SIDEBAR)                                */
+/* ========================================================= */
+.sidebar {
+  background-color: var(--panel-bg);
+  padding: 20px;
+  grid-row: 1 / 2;
+  grid-column: 1 / 2;
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 15px; 
+  overflow: hidden;
+  white-space: nowrap;
+  transition: padding 0.4s ease;
+}
+
+/* Estados de Sidebar oculto */
 .app-container.hide-sidebar .sidebar { padding: 20px 10px; }
 .app-container.hide-sidebar .sidebar-header { justify-content: center; }
 .app-container.hide-sidebar .sidebar-header .panel-label,
 .app-container.hide-sidebar .sidebar-toolbar,
 .app-container.hide-sidebar .folder-grid { display: none; }
 
-.sidebar-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.sidebar-header .panel-label { margin: 0; font-size: 20px; font-weight: 700; flex-grow: 1; }
-.sidebar-toolbar { display: flex; gap: 8px; flex-shrink: 0; }
-.tool-btn { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; color: #999; padding: 7px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
-.tool-btn:hover { background: var(--accent); color: #000; border-color: var(--accent); }
-
-.folder-grid { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex-grow: 1; padding-right: 5px;}
-.folder-card { flex-shrink: 0; display: flex; align-items: center; gap: 12px; background: var(--card-bg); padding: 10px; border-radius: 12px; cursor: pointer; border: 1px solid transparent; }
-.folder-card:hover { background: #2d2d2d; border-color: var(--accent); }
-.folder-cover-placeholder { width: 48px; height: 48px; background: linear-gradient(135deg, #444, #1e1e1e); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #888; flex-shrink: 0; overflow: hidden; }
-.folder-cover-placeholder img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.folder-card-info { display: flex; flex-direction: column; overflow: hidden; }
-.folder-card-name { font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.folder-card-count { font-size: 12px; color: var(--text-secondary); }
-
-/* LIENZO CENTRAL (AHORA RELATIVO PARA BOTONES FLOTANTES) */
-.player-main {
-  grid-row: 1 / 2; grid-column: 2 / 3; 
-  background: radial-gradient(circle at center, var(--canvas-gradient-a) 0%, var(--canvas-gradient-b) 100%);
-  padding: 30px; display: flex; flex-direction: column; overflow: hidden; min-height: 0; min-width: 0;
-  position: relative; /* Clave para los botones fantasma */
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
 }
 
-/* BOTONES FANTASMA MINIMALISTAS (SVG) */
+.sidebar-header .panel-label {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  flex-grow: 1;
+}
+
+.sidebar-toolbar {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Tarjetas de carpetas */
+.folder-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  flex-grow: 1;
+  padding-right: 5px;
+}
+
+.folder-card {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card-bg);
+  padding: 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.folder-card:hover {
+  background: #2d2d2d;
+  border-color: var(--accent);
+}
+
+.folder-cover-placeholder {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #444, #1e1e1e);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.folder-cover-placeholder img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.folder-card-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.folder-card-name {
+  font-weight: bold;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.folder-card-count {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* ========================================================= */
+/* 5. BOTONES GLOBALES Y UTILERÍAS                           */
+/* ========================================================= */
 .ghost-btn {
   background: transparent;
   border: none;
@@ -95,252 +226,864 @@ body, html {
   flex-shrink: 0;
   border-radius: 6px;
 }
+
 .ghost-btn:hover {
   color: var(--text);
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
 }
 
-/* Botones "riel" que viven dentro de los headers de los paneles colapsables */
-.rail-btn { flex-shrink: 0; }
-
-.center-view { width: 100%; height: 100%; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
-.hidden { display: none !important; }
-
-/* ENCABEZADOS Y BOTONES DE REGRESO MINIMALISTAS */
-.view-header { 
-  display: flex; align-items: center; justify-content: flex-start; gap: 16px; 
-  margin-bottom: 20px; flex-shrink: 0; height: 35px; width: 100%;
+.tool-btn {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: #999;
+  padding: 7px;
+  cursor: pointer;
+  transition: 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.view-header h2 { margin: 0; font-size: 20px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
 
-.back-btn { 
-  display: flex; align-items: center; gap: 6px;
-  font-size: 12px; background: transparent; padding: 6px 10px; 
-  border-radius: 8px; border: none; color: var(--text-secondary); cursor: pointer; 
-  white-space: nowrap; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; transition: all 0.2s ease; 
+.tool-btn:hover {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
 }
-.back-btn:hover { background: rgba(255,255,255,0.06); color: var(--accent); }
 
-/* VISTA REPRODUCTOR Y ANIMACIÓN DE COLA */
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  background: transparent;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  transition: all 0.2s ease;
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--accent);
+}
+
+.mode-btn {
+  position: relative;
+  color: #666 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 6px;
+  transition: 0.2s;
+}
+
+.mode-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.mode-btn.active {
+  color: var(--accent) !important;
+  background: rgba(186, 134, 252, 0.12);
+}
+
+/* Indicador de "Repetir 1" */
+.mode-btn.repeat-one::after {
+  content: "1";
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+  font-size: 9px;
+  font-weight: 800;
+  background: var(--accent);
+  color: #000;
+  border-radius: 50%;
+  width: 12px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* ========================================================= */
+/* 6. ENCABEZADOS Y CARÁTULAS PRINCIPALES                    */
+/* ========================================================= */
+.view-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+  height: 35px;
+  width: 100%;
+}
+
+.view-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .now-playing-layout {
-  display: grid; grid-template-columns: 1fr 300px; gap: 15px; flex-grow: 1; min-height: 0; overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 15px;
+  flex-grow: 1;
+  min-height: 0;
+  overflow: hidden;
   transition: grid-template-columns 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
-.now-playing-layout.hide-queue { grid-template-columns: 1fr 0px; gap: 0; }
 
-.main-art-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-width: 0; }
-.album-art { width: 100%; max-width: 320px; aspect-ratio: 1; background: var(--card-bg); border-radius: 28px; display: flex; align-items: center; justify-content: center; font-size: 100px; box-shadow: 0 20px 60px rgba(0,0,0,0.7); flex-shrink: 0; overflow: hidden; position: relative; }
-.cover-art-img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.home-centered-info { text-align: center; margin-top: 35px; width: 100%; padding: 0 20px; box-sizing: border-box; }
-.home-centered-info h1 { margin: 0 0 10px 0; font-size: 30px; font-weight: 900; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.home-centered-info h2 { margin: 0 0 6px 0; font-size: 18px; font-weight: 500; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
-.home-centered-info h3 { margin: 0; font-size: 15px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
-
-/* PANEL DE COLA DERECHO */
-.up-next-panel {
-  background: var(--surface-strong); border-radius: 16px; padding: 15px; border: 1px solid var(--border-color);
-  display: flex; flex-direction: column; overflow: hidden; min-width: 0; 
-  transition: padding 0.4s ease, opacity 0.3s ease; white-space: nowrap;
+.now-playing-layout.hide-queue {
+  grid-template-columns: 1fr 0px;
+  gap: 0;
 }
-.now-playing-layout.hide-queue .up-next-panel { padding: 15px 0; opacity: 0; border: none; }
 
-.panel-header-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; flex-shrink: 0; }
-.up-next-panel h3.panel-label { margin: 0; font-size: 15px; color: var(--text-secondary); flex-grow: 1; }
-#up-next-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 5px; padding-right: 5px;}
-.empty-msg { font-size: 13px; color: #666; text-align: center; margin-top: 20px;}
-
-.up-next-item, .center-track-item { 
-  flex-shrink: 0; padding: 10px; background: var(--surface-soft); border-radius: 8px; cursor: pointer; 
-  transition: 0.2s; border: 1px solid transparent; overflow: hidden; min-width: 0; 
+.main-art-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-width: 0;
+  position: relative;
 }
-.up-next-item { display: flex; flex-direction: column; }
-.up-next-item:hover, .center-track-item:hover { background: var(--surface-soft-hover); border-color: rgba(186, 134, 252, 0.3);}
 
-/* ESTILO DE CANCIÓN ACTUAL (NEÓN) */
-.playing-now {
-  background: rgba(186, 134, 252, 0.15) !important;
-  border-left: 4px solid var(--accent) !important;
-  border-radius: 4px 8px 8px 4px;
+.album-art {
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 1;
+  background: var(--card-bg);
+  border-radius: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 100px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
 }
-.playing-now .track-name, .playing-now .up-next-title { color: var(--accent) !important; }
 
-.up-next-title { font-size: 13px; font-weight: bold; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%;}
-.up-next-artist { font-size: 11px; color: var(--text-secondary); margin-top: 4px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+.cover-art-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
 
-/* VISTA DIVIDIDA (CARPETA) */
-.split-tracks-container { display: grid; grid-template-columns: 1fr 320px; gap: 25px; flex-grow: 1; min-height: 0; overflow: hidden; }
-.tracks-scroll-container { overflow-y: auto; padding-right: 10px; min-width: 0; }
-#center-track-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
-.center-track-item { display: flex; align-items: center; padding: 12px 16px; width: 100%; box-sizing: border-box; }
-.center-track-item.dragging { opacity: 0.4; background: #333; border: 1px dashed var(--accent); cursor: grabbing; }
+.home-centered-info {
+  text-align: center;
+  margin-top: 35px;
+  width: 100%;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+.home-centered-info h1 {
+  margin: 0 0 10px 0;
+  font-size: 30px;
+  font-weight: 900;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-centered-info h2 {
+  margin: 0 0 6px 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-centered-info h3 {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ========================================================= */
+/* 7. VISTA CARPETA Y LISTA DE CANCIONES                     */
+/* ========================================================= */
+.split-tracks-container {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 25px;
+  flex-grow: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tracks-scroll-container {
+  overflow-y: auto;
+  padding-right: 10px;
+  min-width: 0;
+}
+
+#center-track-list, #up-next-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#center-track-list { gap: 6px; }
+#up-next-list { gap: 5px; overflow-y: auto; flex-grow: 1; padding-right: 5px; }
+
+.up-next-item, .center-track-item {
+  flex-shrink: 0;
+  padding: 10px;
+  background: var(--surface-soft);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+  border: 1px solid transparent;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.center-track-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.up-next-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.up-next-item:hover, .center-track-item:hover {
+  background: var(--surface-soft-hover);
+  border-color: rgba(186, 134, 252, 0.3);
+}
 
 .track-index { color: var(--accent); font-weight: bold; width: 30px; font-size: 14px; flex-shrink: 0; }
 .track-name { font-weight: bold; font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text);}
 .track-badge { background: var(--card-bg); color: var(--accent); font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 10px; font-weight: 800; flex-shrink: 0; }
 .track-duration { color: var(--text-secondary); font-size: 13px; margin-left: 15px; min-width: 35px; text-align: right; flex-shrink: 0; }
-.track-like-btn { margin-left: 8px; }
 
-.right-metadata-panel { width: 100%; background-color: var(--surface-strong); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; align-items: center; border: 1px solid var(--border-color); overflow-y: auto; box-sizing: border-box; min-width: 0;}
-.side-album-art { width: 100%; aspect-ratio: 1; background: var(--card-bg); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 80px; margin-bottom: 20px; flex-shrink: 0; overflow: hidden; position: relative; }
-.side-cover-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.up-next-title { font-size: 13px; font-weight: bold; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%;}
+.up-next-artist { font-size: 11px; color: var(--text-secondary); margin-top: 4px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
 
-.lyrics-side-btn { margin-top: 14px; justify-content: center; width: 100%; box-sizing: border-box; border: 1px solid var(--border-color); }
-#btn-lyrics-main { width: auto; display: inline-flex; margin: 14px auto 0; }
-.side-track-details { width: 100%; text-align: left; min-width: 0;}
-.side-track-details h3 { margin: 0 0 10px 0; font-size: 18px; font-weight: 900; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text);}
-.side-track-details p { margin: 4px 0; font-size: 14px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
-
-/* CONTROLES INFERIORES LIMPIOS */
-.controls { grid-row: 2 / 3; grid-column: 1 / -1; background-color: var(--panel-bg); display: flex; justify-content: space-between; align-items: center; padding: 0 25px; border-top: 1px solid var(--border-color); height: 100%; box-sizing: border-box; gap: 20px; }
-.controls-center { display: flex; align-items: center; flex-grow: 1; min-width: 0; gap: 20px; }
-.playback-controls { display: flex; gap: 18px; align-items: center; flex-shrink: 0;}
-.controls button { background: none; border: none; color: var(--text); font-size: 28px; cursor: pointer; }
-.controls button:hover { color: var(--accent); }
-.progress-bar { flex-grow: 1; max-width: none; height: 44px; background-color: transparent; border-radius: 3px; margin-left: 0; cursor: pointer; }
-#spectrum-canvas { width: 100%; height: 100%; display: block; }
-.time-label { flex-shrink: 0; font-size: 12px; font-variant-numeric: tabular-nums; color: var(--text-secondary); min-width: 36px; text-align: center; user-select: none; }
-
-/* Botones de modo: aleatorio / repetir / autoplay */
-.mode-btn { position: relative; color: #666 !important; display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 6px; transition: 0.2s; }
-.mode-btn:hover { background: rgba(255,255,255,0.06); }
-.mode-btn.active { color: var(--accent) !important; background: rgba(186, 134, 252, 0.12); }
-
-/* Botones minimalistas a los costados del footer (cola / ajustes) */
-.footer-side-btn { width: 40px; height: 40px; flex-shrink: 0; }
-
-/* VOLUMEN: botón + panel que aparece al pasar el mouse */
-.volume-control { position: relative; display: flex; align-items: center; flex-shrink: 0; }
-.volume-popover {
-  position: absolute; bottom: calc(100% + 10px); right: -6px;
-  background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 10px;
-  padding: 10px 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  opacity: 0; visibility: hidden; transform: translateY(6px);
-  transition: all 0.18s ease; width: 130px;
-}
-.volume-control:hover .volume-popover,
-.volume-control:focus-within .volume-popover { opacity: 1; visibility: visible; transform: translateY(0); }
-.volume-popover input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
-
-/* MODAL DE AJUSTES */
-.settings-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 300; }
-.settings-panel { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; width: 280px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
-.settings-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
-.settings-panel-header h3 { margin: 0; font-size: 17px; }
-.settings-label { display: block; font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
-.accent-swatches { display: flex; gap: 10px; }
-.swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: 0.2s; padding: 0; }
-.swatch:hover { transform: scale(1.15); }
-.swatch.active { border-color: #fff; }
-
-.theme-toggle { display: flex; gap: 8px; }
-.theme-option { flex: 1; background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); padding: 8px 0; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; transition: 0.2s; }
-.theme-option.active { border-color: var(--accent); color: var(--accent); background: rgba(186, 134, 252, 0.1); }
-
-.mode-btn.repeat-one::after {
-  content: "1"; position: absolute; bottom: 0px; right: 0px;
-  font-size: 9px; font-weight: 800; background: var(--accent); color: #000;
-  border-radius: 50%; width: 12px; height: 12px; display: flex; align-items: center; justify-content: center; line-height: 1;
+/* Canción en reproducción (Efecto Neón) */
+.playing-now {
+  background: rgba(186, 134, 252, 0.15) !important;
+  border-left: 4px solid var(--accent) !important;
+  border-radius: 4px 8px 8px 4px;
 }
 
-/* BOTÓN DE ME GUSTA (vista de reproductor) */
-.track-title-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
-.like-btn { color: #666; }
-.like-btn.liked { color: #ff4d6d; }
-.like-btn.liked svg { fill: #ff4d6d; }
+.playing-now .track-name, .playing-now .up-next-title {
+  color: var(--accent) !important;
+}
 
-/* CORAZÓN EN LAS FILAS DE LA LISTA */
-.track-like-btn { background: none; border: none; color: #555; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; flex-shrink: 0; }
-.track-like-btn:hover { color: #ff4d6d; }
-.track-like-btn.liked { color: #ff4d6d; }
-.track-like-btn.liked svg { fill: #ff4d6d; }
+/* Panel Lateral Metadatos y Cola */
+.right-metadata-panel, .up-next-panel {
+  background-color: var(--surface-strong);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  box-sizing: border-box;
+}
 
-/* LETRAS — VISTA PRINCIPAL (la carátula pasa de fondo difuminada, cubre
-   todo el escenario del reproductor; título/opciones quedan justo arriba
-   de la barra de tiempo del footer, y la letra queda centrada en medio) */
-.main-art-container { position: relative; }
+.right-metadata-panel {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
+  min-width: 0;
+  width: 100%;
+}
 
+.up-next-panel {
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  transition: padding 0.4s ease, opacity 0.3s ease;
+  white-space: nowrap;
+}
+
+.now-playing-layout.hide-queue .up-next-panel {
+  padding: 15px 0;
+  opacity: 0;
+  border: none;
+}
+
+.panel-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+  flex-shrink: 0;
+}
+
+.up-next-panel h3.panel-label {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text-secondary);
+  flex-grow: 1;
+}
+
+.empty-msg {
+  font-size: 13px;
+  color: #666;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.side-album-art {
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--card-bg);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 80px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.side-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.side-track-details {
+  width: 100%;
+  text-align: left;
+  min-width: 0;
+}
+
+.side-track-details h3 {
+  margin: 0 0 10px 0;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
+
+.side-track-details p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ========================================================= */
+/* 8. SISTEMA DE LETRAS (LYRICS)                             */
+/* ========================================================= */
+.lyrics-side-btn {
+  margin-top: 14px;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border-color);
+}
+
+#btn-lyrics-main {
+  width: auto;
+  display: inline-flex;
+  margin: 14px auto 0;
+}
+
+/* Overlay Difuminado Principal */
 .lyrics-panel {
-  position: absolute; inset: 0; z-index: 5; border-radius: 24px; overflow: hidden;
-  display: flex; flex-direction: column;
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  border-radius: 24px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background: #0c0c10;
-  opacity: 0; visibility: hidden; transform: scale(0.97);
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.97);
   transition: opacity 0.45s ease, transform 0.45s ease, visibility 0.45s;
 }
-.lyrics-panel.active { opacity: 1; visibility: visible; transform: scale(1); }
+
+.lyrics-panel.active {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+}
 
 .lyrics-panel-bg {
-  position: absolute; inset: -25px; z-index: 0;
-  background-size: cover; background-position: center;
+  position: absolute;
+  inset: -25px;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
   filter: blur(50px) brightness(0.5) saturate(1.2);
   transform: scale(1.15);
 }
 
 .lyrics-close-btn {
-  position: relative; z-index: 1; align-self: flex-end; margin: 12px 12px 0 0;
-  background: rgba(0,0,0,0.35); border: none; color: #fff; border-radius: 50%;
-  width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  align-self: flex-end;
+  margin: 12px 12px 0 0;
+  background: rgba(0,0,0,0.35);
+  border: none;
+  color: #fff;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.2s;
+  flex-shrink: 0;
 }
+
 .lyrics-close-btn:hover { background: rgba(0,0,0,0.6); }
 
-.lyrics-panel-scroll { position: relative; z-index: 1; flex: 1; overflow-y: auto; padding: 20px 32px; display: flex; align-items: center; }
+.lyrics-panel-scroll {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 32px;
+  display: flex;
+  align-items: center;
+}
+
 .lyrics-panel-text {
-  margin: 0; width: 100%; color: #fff; font-size: 18px; font-weight: 700; line-height: 1.8;
-  text-align: center; white-space: pre-wrap; text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+  margin: 0;
+  width: 100%;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.8;
+  text-align: center;
+  white-space: pre-wrap;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.6);
   animation: lyricsFadeIn 0.5s ease 0.1s both;
 }
+
 .lyrics-panel-text:empty::before {
   content: "Aún no agregaste la letra de esta canción.";
-  color: rgba(255,255,255,0.6); font-weight: 500; font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+  font-size: 14px;
 }
-@keyframes lyricsFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+@keyframes lyricsFadeIn { 
+  from { opacity: 0; transform: translateY(8px); } 
+  to { opacity: 1; transform: translateY(0); } 
+}
 
 .lyrics-panel-footer {
-  position: relative; z-index: 1; flex-shrink: 0; padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   background: linear-gradient(transparent, rgba(0,0,0,0.8) 55%);
 }
+
 .lyrics-panel-footer-info { display: flex; flex-direction: column; min-width: 0; }
 .lyrics-panel-title { font-size: 15px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lyrics-panel-artist { font-size: 12px; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lyrics-panel-footer-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
 .lyrics-panel-footer-actions .like-btn { color: rgba(255,255,255,0.8); }
 .lyrics-panel-footer-actions .like-btn:hover { color: #fff; background: rgba(255,255,255,0.12); }
 .lyrics-panel-footer-actions .like-btn.liked { color: #ff4d6d; }
 .lyrics-panel-footer-actions .like-btn.liked svg { fill: #ff4d6d; }
 
 .lyrics-edit-link {
-  flex-shrink: 0; background: rgba(255,255,255,0.14); border: none; color: #fff; font-size: 11px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.4px; padding: 7px 14px; border-radius: 20px; cursor: pointer; transition: 0.2s;
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.14);
+  border: none;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: 0.2s;
 }
-.lyrics-edit-link:hover { background: var(--accent); color: #000; }
 
-/* LETRAS — VISTA DE CARPETA (caja expandible debajo de la carátula) */
+.lyrics-edit-link:hover {
+  background: var(--accent);
+  color: #000;
+}
+
+/* Letras Vista Carpeta (Inline) */
 .side-lyrics-view {
-  width: 100%; display: flex; flex-direction: column; min-width: 0;
-  max-height: 0; opacity: 0; overflow: hidden;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
   transition: max-height 0.45s cubic-bezier(0.25,1,0.5,1), opacity 0.3s ease;
 }
-.side-lyrics-view.active { max-height: 2000px; opacity: 1; flex: 1 1 auto; min-height: 0; }
-.side-lyrics-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-shrink: 0; }
-.side-lyrics-title { font-size: 15px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.side-lyrics-scroll {
-  flex: 1; min-height: 140px; overflow-y: auto; padding: 14px;
-  background: var(--surface-soft); border: 1px solid var(--border-color); border-radius: 12px;
-}
-.side-lyrics-scroll .lyrics-panel-text {
-  color: var(--text); font-size: 14px; font-weight: 500; text-align: left; text-shadow: none; line-height: 1.7; animation: none;
-}
-.side-lyrics-scroll .lyrics-panel-text:empty::before { color: var(--text-secondary); font-weight: 400; }
-.side-lyrics-view .lyrics-edit-link {
-  margin-top: 12px; align-self: flex-start; flex-shrink: 0; background: var(--card-bg); color: var(--text);
-}
-.side-lyrics-view .lyrics-edit-link:hover { background: var(--accent); color: #000; }
-.lyrics-modal-panel { width: 380px; }
-.lyrics-textarea {
-  width: 100%; min-height: 220px; resize: vertical; box-sizing: border-box;
-  background: var(--bg-color); color: var(--text); border: 1px solid var(--border-color);
-  border-radius: 10px; padding: 12px; font-size: 13px; line-height: 1.5; font-family: inherit;
+
+.side-lyrics-view.active {
+  max-height: 2000px;
+  opacity: 1;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+.side-lyrics-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.side-lyrics-title { font-size: 15px; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+.side-lyrics-scroll {
+  flex: 1;
+  min-height: 140px;
+  overflow-y: auto;
+  padding: 14px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.side-lyrics-scroll .lyrics-panel-text {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  text-shadow: none;
+  line-height: 1.7;
+  animation: none;
+}
+
+.side-lyrics-scroll .lyrics-panel-text:empty::before { color: var(--text-secondary); font-weight: 400; }
+.side-lyrics-view .lyrics-edit-link { margin-top: 12px; align-self: flex-start; flex-shrink: 0; background: var(--card-bg); color: var(--text); }
+.side-lyrics-view .lyrics-edit-link:hover { background: var(--accent); color: #000; }
+
+/* ========================================================= */
+/* 9. CONTROLES DEL REPRODUCTOR (FOOTER)                     */
+/* ========================================================= */
+.controls {
+  grid-row: 2 / 3;
+  grid-column: 1 / -1;
+  background-color: var(--panel-bg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 25px;
+  border-top: 1px solid var(--border-color);
+  height: 100%;
+  box-sizing: border-box;
+  gap: 20px;
+}
+
+.controls-center {
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  min-width: 0;
+  gap: 20px;
+}
+
+.playback-controls { display: flex; gap: 18px; align-items: center; flex-shrink: 0; }
+.controls button { background: none; border: none; color: var(--text); font-size: 28px; cursor: pointer; }
+.controls button:hover { color: var(--accent); }
+
+.progress-bar {
+  flex-grow: 1;
+  max-width: none;
+  height: 44px;
+  background-color: transparent;
+  border-radius: 3px;
+  margin-left: 0;
+  cursor: pointer;
+}
+
+#spectrum-canvas { width: 100%; height: 100%; display: block; }
+.time-label { flex-shrink: 0; font-size: 12px; font-variant-numeric: tabular-nums; color: var(--text-secondary); min-width: 36px; text-align: center; user-select: none; }
+
+.footer-side-btn { width: 40px; height: 40px; flex-shrink: 0; }
+
+/* Control de Volumen y Popover */
+.volume-control { position: relative; display: flex; align-items: center; flex-shrink: 0; }
+.volume-popover {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: -6px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(6px);
+  transition: all 0.18s ease;
+  width: 130px;
+}
+
+.volume-control:hover .volume-popover,
+.volume-control:focus-within .volume-popover {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.volume-popover input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+
+/* ========================================================= */
+/* 10. MODALES Y AJUSTES (SETTINGS)                          */
+/* ========================================================= */
+.settings-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+}
+
+.settings-panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 24px;
+  width: 380px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+
+.eq-modal-panel { width: 520px; }
+
+.settings-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.settings-panel-header h3 { margin: 0; font-size: 17px; }
+.settings-label { display: block; font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+
+/* Themes y Opciones */
+.theme-select {
+  width: 100%;
+  margin-bottom: 12px;
+  background-color: var(--surface-strong) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  appearance: auto;
+}
+
+.theme-select:focus {
+  border-color: var(--accent);
+}
+
+.theme-select option {
+  background-color: var(--panel-bg);
+  color: var(--text);
+}
+
+.theme-toggle { display: flex; gap: 8px; }
+.theme-option {
+  flex: 1;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 8px 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  transition: 0.2s;
+}
+
+.theme-option.active { border-color: var(--accent); color: var(--accent); background: rgba(186, 134, 252, 0.1); }
+.eq-reset-btn { font-size: 11px; padding: 4px 10px; cursor: pointer; flex: none; }
+.eq-sliders-container { display: flex; gap: 6px; justify-content: space-between; min-height: 160px; height: auto; align-items: flex-end; margin-top: 25px; width: 100%; overflow-x: hidden; overflow-y: visible; }
+
+.accent-swatches { display: flex; gap: 10px; }
+.swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: 0.2s; padding: 0; }
+.swatch:hover { transform: scale(1.15); }
+.swatch.active { border-color: #fff; }
+
+.lyrics-modal-panel { width: 380px; }
+.lyrics-textarea {
+  width: 100%;
+  min-height: 220px;
+  resize: vertical;
+  box-sizing: border-box;
+  background: var(--bg-color);
+  color: var(--text);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  font-family: inherit;
+}
+
+/* ========================================================= */
+/* 11. DRAG & DROP Y ESTADOS INTERACTIVOS                    */
+/* ========================================================= */
+.drag-placeholder {
+  border: 2px dashed var(--accent);
+  background: rgba(186, 134, 252, 0.1);
+  border-radius: 8px;
+  height: 48px;
+  margin: 4px 0;
+  pointer-events: none;
+}
+
+.center-track-item.dragging, .up-next-item.dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+  border: 1px solid var(--accent);
+}
+
+/* ========================================================= */
+/* 12. FAVORITOS (ME GUSTA)                                  */
+/* ========================================================= */
+.track-title-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
+
+.like-btn { color: #666; }
+.like-btn.liked { color: #ff4d6d; }
+.like-btn.liked svg { fill: #ff4d6d; }
+
+.track-like-btn { background: none; border: none; color: #555; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; flex-shrink: 0; }
+.track-like-btn:hover { color: #ff4d6d; }
+.track-like-btn.liked { color: #ff4d6d; }
+.track-like-btn.liked svg { fill: #ff4d6d; }
+
+/* --- CORRECCIÓN DE FONDOS BLANCOS EN LAS OPCIONES (SELECT) --- */
+select.theme-select option {
+  background-color: var(--panel-bg);
+  color: var(--text);
+}
+
+/* --- ESTILOS DEL NUEVO POP-OVER DE DISPOSITIVOS DE AUDIO --- */
+.device-popover {
+  position: absolute;
+  bottom: calc(100% + 15px);
+  right: -20px; /* Ajustado para que no se salga de la pantalla */
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px;
+  width: 210px; /* Más compacto */
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  z-index: 100;
+  transition: all 0.2s ease;
+}
+.device-popover.hidden {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+}
+.device-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.device-btn {
+  background: var(--surface-soft);
+  border: 1px solid transparent;
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-family: system-ui, sans-serif !important;
+  font-size: 12px !important; /* Fuerza el tamaño pequeño */
+  line-height: 1.3 !important;
+  text-align: left;
+  cursor: pointer;
+  transition: 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.device-btn:hover { 
+  background: var(--surface-soft-hover); 
+  border-color: var(--accent); 
+}
+.device-btn.active { 
+  background: rgba(186, 134, 252, 0.15); 
+  border-color: var(--accent); 
+  color: var(--accent) !important; 
+  font-weight: 700 !important; 
+}
+
+/* --- ESTILOS DEL MENSAJE DE ALERTA (TOAST) --- */
+.toast-msg {
+  position: fixed;
+  bottom: 95px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(20, 20, 20, 0.95);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  border: 1px solid var(--accent);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  z-index: 1000;
+  pointer-events: none;
+}
+.toast-msg.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}

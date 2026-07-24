@@ -1,106 +1,130 @@
-use std::fs;
-use std::path::Path;
-use lofty::probe::Probe;
-use lofty::file::TaggedFileExt;
 use base64::Engine;
+use lofty::file::TaggedFileExt;
+use lofty::probe::Probe;
+use std::fs;
+use std::path::{Path};
 
+// =====================================================================
+// 1. CONSTANTES DE CONFIGURACIÓN
+// =====================================================================
+const IMAGE_EXTENSIONS: [&str; 4] = ["jpg", "jpeg", "png", "webp"];
+const AUDIO_EXTENSIONS: [&str; 6] = ["opus", "m4a", "mp3", "ogg", "flac", "wav"];
+const PRIORITY_COVER_NAMES: [&str; 6] = ["cover", "folder", "art", "artwork", "portada", "caratula"];
+
+// =====================================================================
+// 2. ESTRUCTURAS DE DATOS (API PARA EL FRONTEND)
+// =====================================================================
 #[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")] // Transforma automáticamente 'dir_path' a 'dirPath' en el JSON
 struct FolderSection {
-    #[serde(rename = "name")]
     name: String,
-    #[serde(rename = "count")]
     count: usize,
-    #[serde(rename = "tracks")]
     tracks: Vec<String>,
-    #[serde(rename = "dirPath")]
     dir_path: String,
-    #[serde(rename = "cover")]
     cover: Option<String>,
 }
 
 #[derive(serde::Serialize)]
 struct ScanResult {
-    #[serde(rename = "path")]
     path: String,
-    #[serde(rename = "sections")]
     sections: Vec<FolderSection>,
 }
 
-const IMAGE_EXTENSIONS: [&str; 4] = ["jpg", "jpeg", "png", "webp"];
-const PRIORITY_COVER_NAMES: [&str; 6] = ["cover", "folder", "art", "artwork", "portada", "caratula"];
+// =====================================================================
+// 3. FUNCIONES AUXILIARES (HELPERS)
+// =====================================================================
 
-// Todos los formatos que el escáner detectará
-const AUDIO_EXTENSIONS: [&str; 6] = ["opus", "m4a", "mp3", "ogg", "flac", "wav"];
+/// Verifica si un archivo tiene una extensión de audio válida
+fn is_audio_file(path: &Path) -> bool {
+    path.extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| AUDIO_EXTENSIONS.contains(&ext.to_lowercase().as_str()))
+        .unwrap_or(false)
+}
 
+/// Extrae metadatos y carátula incrustada (ID3, MP4, FLAC) usando Lofty
 fn extract_embedded_cover(track_path: &Path) -> Option<String> {
     let tagged_file = Probe::open(track_path).ok()?.read().ok()?;
     let tag = tagged_file.primary_tag().or_else(|| tagged_file.first_tag())?;
     let picture = tag.pictures().first()?;
+    
     let mime = picture.mime_type().map(|m| m.to_string()).unwrap_or_else(|| "image/jpeg".to_string());
     let b64 = base64::engine::general_purpose::STANDARD.encode(picture.data());
+    
     Some(format!("data:{};base64,{}", mime, b64))
 }
 
+/// Busca una imagen de portada dentro de una carpeta o usa la incrustada en la primera pista
 fn find_cover(dir: &Path) -> Option<String> {
     let entries = fs::read_dir(dir).ok()?;
-    let mut fallback: Option<String> = None;
-    let mut first_track: Option<std::path::PathBuf> = None;
+    let mut fallback = None;
+    let mut first_track = None;
 
     for entry in entries.flatten() {
         let path = entry.path();
         if !path.is_file() { continue; }
-        let extension = match path.extension() {
-            Some(ext) => ext.to_string_lossy().to_lowercase(),
+
+        let extension = match path.extension().and_then(|e| e.to_str()) {
+            Some(ext) => ext.to_lowercase(),
             None => continue,
         };
 
-        if AUDIO_EXTENSIONS.contains(&extension.as_str()) && first_track.is_none() {
+        // Guardar la primera canción en caso de necesitar su carátula interna
+        if first_track.is_none() && AUDIO_EXTENSIONS.contains(&extension.as_str()) {
             first_track = Some(path.clone());
         }
 
         if !IMAGE_EXTENSIONS.contains(&extension.as_str()) { continue; }
 
-        let stem = path.file_stem().map(|s| s.to_string_lossy().to_lowercase()).unwrap_or_default();
-        if PRIORITY_COVER_NAMES.iter().any(|name| stem == *name) {
+        let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("").to_lowercase();
+        
+        // Si el archivo tiene un nombre prioritario, lo devolvemos inmediatamente
+        if PRIORITY_COVER_NAMES.contains(&stem.as_str()) {
             return Some(path.to_string_lossy().into_owned());
         }
+        
+        // Guardamos cualquier otra imagen como plan de respaldo
         if fallback.is_none() {
             fallback = Some(path.to_string_lossy().into_owned());
         }
     }
 
+    // Prioridad de retorno: 1. Imagen encontrada, 2. Portada incrustada, 3. None
     fallback.or_else(|| first_track.and_then(|track| extract_embedded_cover(&track)))
 }
 
+/// Analiza un directorio específico y extrae solo los nombres de pistas de audio válidas
+fn get_tracks_in_dir(dir: &Path) -> Vec<String> {
+    let mut tracks = Vec::new();
+    if let Ok(entries) = fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file() && is_audio_file(&path) {
+                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                    tracks.push(name.to_owned());
+                }
+            }
+        }
+    }
+    tracks
+}
+
+// =====================================================================
+// 4. LÓGICA PRINCIPAL DE ESCANEO
+// =====================================================================
 fn perform_scan(base_path: &Path) -> Vec<FolderSection> {
     let mut sections = Vec::new();
 
     if let Ok(entries) = fs::read_dir(base_path) {
         for entry in entries.flatten() {
             let path = entry.path();
+            
+            // 1. Procesar todas las subcarpetas encontradas
             if path.is_dir() {
-                let folder_name = path.file_name().unwrap_or_default().to_string_lossy().into_owned();
-                let mut tracks = Vec::new();
-
-                if let Ok(sub_entries) = fs::read_dir(&path) {
-                    for sub_entry in sub_entries.flatten() {
-                        let sub_path = sub_entry.path();
-                        if sub_path.is_file() {
-                            if let Some(extension) = sub_path.extension() {
-                                let ext_str = extension.to_string_lossy().to_lowercase();
-                                if AUDIO_EXTENSIONS.contains(&ext_str.as_str()) {
-                                    if let Some(name) = sub_path.file_name() {
-                                        tracks.push(name.to_string_lossy().into_owned());
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
+                let tracks = get_tracks_in_dir(&path);
                 if !tracks.is_empty() {
                     sections.push(FolderSection {
-                        name: folder_name,
+                        name: path.file_name().unwrap_or_default().to_string_lossy().into_owned(),
                         count: tracks.len(),
                         tracks,
                         dir_path: path.to_string_lossy().into_owned(),
@@ -111,23 +135,8 @@ fn perform_scan(base_path: &Path) -> Vec<FolderSection> {
         }
     }
 
-    let mut root_tracks = Vec::new();
-    if let Ok(entries) = fs::read_dir(base_path) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.is_file() {
-                if let Some(extension) = path.extension() {
-                    let ext_str = extension.to_string_lossy().to_lowercase();
-                    if AUDIO_EXTENSIONS.contains(&ext_str.as_str()) {
-                        if let Some(name) = path.file_name() {
-                            root_tracks.push(name.to_string_lossy().into_owned());
-                        }
-                    }
-                }
-            }
-        }
-    }
-
+    // 2. Procesar archivos de audio "sueltos" directamente en la raíz
+    let root_tracks = get_tracks_in_dir(base_path);
     if !root_tracks.is_empty() {
         sections.insert(0, FolderSection {
             name: "Canciones sueltas".to_string(),
@@ -141,27 +150,24 @@ fn perform_scan(base_path: &Path) -> Vec<FolderSection> {
     sections
 }
 
+// =====================================================================
+// 5. COMANDOS DE TAURI (EXPUESTOS A JAVASCRIPT)
+// =====================================================================
 #[tauri::command]
 fn select_and_scan_music() -> Option<ScanResult> {
-    let result = rfd::FileDialog::new()
+    let base_path = rfd::FileDialog::new()
         .set_title("Selecciona tu carpeta de Música")
-        .pick_folder();
+        .pick_folder()?; // Retorno temprano automático si el usuario cancela
 
-    let base_path = match result {
-        Some(path) => path,
-        None => return None,
-    };
-
-    let sections = perform_scan(&base_path);
-    let path_str = base_path.to_string_lossy().into_owned();
-
-    Some(ScanResult { path: path_str, sections })
+    Some(ScanResult {
+        path: base_path.to_string_lossy().into_owned(),
+        sections: perform_scan(&base_path),
+    })
 }
 
 #[tauri::command]
 fn refresh_music_folder(folder_path: &str) -> Vec<FolderSection> {
-    let base_path = Path::new(folder_path);
-    perform_scan(base_path)
+    perform_scan(Path::new(folder_path))
 }
 
 #[tauri::command]
@@ -169,34 +175,28 @@ fn get_track_cover(path: &str) -> Option<String> {
     extract_embedded_cover(Path::new(path))
 }
 
-// Helper dinámico para inyectar el Content-Type adecuado
-fn get_mime_type(path: &str) -> &'static str {
-    let lower = path.to_lowercase();
-    if lower.ends_with(".opus") || lower.ends_with(".ogg") { "audio/ogg" } 
-    else if lower.ends_with(".m4a") { "audio/mp4" }
-    else if lower.ends_with(".mp3") { "audio/mpeg" }
-    else if lower.ends_with(".flac") { "audio/flac" }
-    else if lower.ends_with(".wav") { "audio/wav" }
-    else { "application/octet-stream" }
-}
-
+// =====================================================================
+// 6. PUNTO DE ENTRADA (MAIN)
+// =====================================================================
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // 🔥 PLAN B: Levantamos un servidor web local invisible en un hilo secundario
+    // 🔥 PLAN B: Servidor web local en un hilo secundario de forma segura
     std::thread::spawn(|| {
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(async {
-            // ServeDir="/" permite acceder a todo el disco usando rutas normales de Linux
-            let app = axum::Router::new()
-                .fallback_service(tower_http::services::ServeDir::new("/"))
-                .layer(tower_http::cors::CorsLayer::permissive());
-            
-            // Elegimos un puerto al azar (18543)
-            if let Ok(listener) = tokio::net::TcpListener::bind("127.0.0.1:18543").await {
-                println!("🚀 Servidor local de audio activo en http://127.0.0.1:18543");
-                let _ = axum::serve(listener, app).await;
-            }
-        });
+        if let Ok(rt) = tokio::runtime::Runtime::new() {
+            rt.block_on(async {
+                let app = axum::Router::new()
+                    .fallback_service(tower_http::services::ServeDir::new("/"))
+                    .layer(tower_http::cors::CorsLayer::permissive());
+                
+                // Binding seguro al puerto
+                if let Ok(listener) = tokio::net::TcpListener::bind("127.0.0.1:18543").await {
+                    println!("🚀 Servidor local de audio activo en http://127.0.0.1:18543");
+                    let _ = axum::serve(listener, app).await;
+                } else {
+                    eprintln!("⚠️ No se pudo iniciar el servidor local de audio en el puerto 18543.");
+                }
+            });
+        }
     });
 
     tauri::Builder::default()
